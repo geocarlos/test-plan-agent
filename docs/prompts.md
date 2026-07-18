@@ -212,3 +212,93 @@ Ao final, informe os arquivos alterados, os comandos executados, o resultado dos
 ### Status
 
 - Concluído e validado com `uv run test-plan-agent` e `uv run pytest`.
+
+## Prompt 4: Geração do plano de testes
+
+### Objetivo
+
+Implementar a geração estruturada do plano de testes, com prompts internos, novos nós no grafo, enriquecimento do estado de execução e formatação da resposta final em Markdown.
+
+### Branch sugerido
+
+```text
+feature/test-plan-generation
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O setup inicial Python com uv já foi realizado.
+- O esqueleto do agente LangGraph já existe com state.py, graph.py, tools.py, validators.py e cli.py.
+- A base local `data/test_templates.md` já existe.
+- A ferramenta de leitura controlada da base local já foi implementada com validações de segurança.
+- O grafo já usa a base local como contexto.
+- O CLI executa com `uv run test-plan-agent`.
+- A suíte atual passa com `uv run pytest`.
+
+Objetivo do projeto:
+Construir um agente com LangGraph que receba histórias de usuário, issues ou requisitos funcionais e gere planos de teste verificáveis com critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda, dados de exemplo, riscos de ambiguidade e sugestões de automação.
+
+Nesta etapa, implemente a geração do plano de testes final, ainda sem depender obrigatoriamente de chamada real a LLM. Se não houver configuração explícita de provedor de IA no projeto, use uma geração determinística e estruturada baseada na história do usuário e na base local de templates.
+
+Branch sugerido para esta etapa:
+feature/test-plan-generation
+
+Regras do projeto:
+- Faça somente o que for pedido nesta etapa.
+- Use documentação em português com acentuação correta conforme a ortografia padrão do Brasil.
+- Preserve as instruções do projeto em .github/copilot-instructions.md, .github/instructions/project-memory.instructions.md e CLAUDE.md.
+- Não adicione banco de dados ou memória persistente nesta etapa.
+- Use o estado do LangGraph como memória de execução.
+- Não adicione chamadas reais a LLM sem configuração explícita e segura.
+- Mantenha a saída final verificável, objetiva e adequada a uma entrega acadêmica prática.
+
+Tarefas esperadas:
+1. Atualizar `src/test_plan_agent/state.py` para representar melhor a memória de execução, incluindo campos como `acceptance_criteria`, `test_scenarios`, `edge_cases`, `example_data`, `ambiguity_risks`, `automation_suggestions` e `final_answer`.
+2. Criar ou atualizar um módulo de prompts internos, por exemplo `src/test_plan_agent/prompts.py`, com templates textuais usados pela geração do plano.
+3. Melhorar `src/test_plan_agent/validators.py` para sinalizar lacunas básicas da história, como ausência de ator, objetivo ou resultado esperado.
+4. Adicionar detecção simples de termos ambíguos, como "rápido", "simples", "intuitivo", "adequado", "melhor" e "completo".
+5. Atualizar `src/test_plan_agent/graph.py` com nós claros para analisar a história, gerar critérios de aceite, gerar cenários, gerar casos de borda, sugerir dados de exemplo, identificar riscos de ambiguidade e formatar a resposta final.
+6. Garantir que o grafo continue usando `data/test_templates.md` como contexto por meio da ferramenta controlada.
+7. Gerar uma resposta final em Markdown com seções como:
+	- Resumo da história
+	- Lacunas e ambiguidades
+	- Critérios de aceite verificáveis
+	- Cenários principais em Given/When/Then
+	- Cenários alternativos e negativos
+	- Casos de borda
+	- Dados de exemplo
+	- Sugestões de automação
+	- Riscos e observações
+8. Atualizar `src/test_plan_agent/cli.py` para imprimir a resposta final em Markdown quando o fluxo for executado.
+9. Atualizar ou criar testes em `tests/` cobrindo história válida, história curta ou inválida, termos ambíguos, geração das principais seções e uso do contexto local.
+10. Atualizar o README.md somente se houver mudança real no comportamento demonstrável do CLI.
+11. Validar tudo com comandos reais usando uv.
+
+Resultado esperado:
+- Estado do agente enriquecido como memória de execução.
+- Prompts internos registrados no código.
+- Grafo com nós de geração do plano de testes.
+- Resposta final formatada em Markdown.
+- Validações básicas mais fortes para entrada e ambiguidade.
+- `uv run test-plan-agent` exibindo um plano de testes estruturado.
+- `uv run pytest` passando.
+
+Ao final, informe os arquivos alterados, os comandos executados, o resultado dos testes e o que ficou preparado para a próxima etapa.
+```
+
+### Resultado esperado
+
+- Plano de testes final gerado em Markdown.
+- Estado do LangGraph usado como memória de execução enriquecida.
+- Nós do grafo separados para análise, geração e formatação.
+- Validação de entrada e ambiguidade mais robusta.
+- CLI demonstrando a saída final estruturada.
+- Testes cobrindo a geração principal e casos inválidos.
+
+### Status
+
+- Planejado.
