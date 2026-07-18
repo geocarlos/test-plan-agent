@@ -8,7 +8,7 @@ class AgentState(TypedDict, total=False):
 
     user_story: str
     validation_errors: list[str]
-    local_context: dict[str, str]
+    local_context: dict[str, Any]
     provisional_response: dict[str, Any]
 
 

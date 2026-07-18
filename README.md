@@ -12,6 +12,12 @@ Construir um agente com LangGraph capaz de receber uma história de usuário, an
 
 O guia inicial do agente está em [docs/guia-geral-prompt.md](docs/guia-geral-prompt.md). Ele descreve o prompt-base, fluxo com LangGraph, estado recomendado, ferramenta integrada, validações e exemplos de entrada e saída.
 
+## Base local de testes
+
+O fluxo mínimo usa uma base local em [data/test_templates.md](data/test_templates.md) como referência controlada para critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda e checklist de testabilidade.
+
+A ferramenta de leitura permite apenas arquivos `.md` e `.txt` dentro da pasta `data/`, com limite de tamanho e erros controlados para caminhos inválidos, arquivos inexistentes, extensões não permitidas e arquivos grandes demais.
+
 ## Setup inicial
 
 Este projeto usa Python com `uv` para gerenciamento de ambiente, dependências e execução de comandos.
