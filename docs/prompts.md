@@ -58,4 +58,83 @@ Ao final, informe os arquivos alterados, os comandos executados e qualquer limit
 
 ### Status
 
+- Concluído e validado com `uv run test-plan-agent` e `uv run pytest`.
+
+## Prompt 2: Esqueleto do agente LangGraph
+
+### Objetivo
+
+Criar o esqueleto funcional do agente com LangGraph, organizando estado, grafo, validações, ferramenta mínima e ponto de entrada, sem implementar ainda a geração completa do plano de testes.
+
+### Branch sugerido
+
+```text
+feature/langgraph-agent-skeleton
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O setup inicial Python com uv já foi realizado.
+- O projeto possui pyproject.toml, src/, tests/, .gitignore, .env.example e comandos básicos com uv.
+- O CLI inicial executa com `uv run test-plan-agent`.
+- A suíte inicial executa com `uv run pytest`.
+
+Objetivo do projeto:
+Construir um agente com LangGraph que receba histórias de usuário, issues ou requisitos funcionais e gere planos de teste verificáveis com critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda, dados de exemplo, riscos de ambiguidade e sugestões de automação.
+
+Nesta etapa, faça apenas o esqueleto funcional do agente LangGraph.
+
+Branch sugerido para esta etapa:
+feature/langgraph-agent-skeleton
+
+Regras do projeto:
+- Faça somente o que for pedido nesta etapa.
+- Use documentação em português com acentuação correta conforme a ortografia padrão do Brasil.
+- Preserve as instruções do projeto em .github/copilot-instructions.md, .github/instructions/project-memory.instructions.md e CLAUDE.md.
+- Use nomes claros e semânticos para módulos, funções, estado e nós do grafo.
+- Não implemente ainda a geração completa do plano de testes. Crie um fluxo mínimo, testável e preparado para evolução.
+- Não adicione chamadas reais a LLM nesta etapa, a menos que já exista configuração explícita para isso no projeto.
+
+Tarefas esperadas:
+1. Criar ou atualizar `src/test_plan_agent/state.py` com o estado compartilhado do agente.
+2. Criar ou atualizar `src/test_plan_agent/validators.py` com validação básica da história de usuário.
+3. Criar ou atualizar `src/test_plan_agent/tools.py` com uma ferramenta mínima controlada, mesmo que temporária, para preparar o uso futuro de contexto local.
+4. Criar ou atualizar `src/test_plan_agent/graph.py` com um `StateGraph` mínimo funcionando.
+5. Atualizar `src/test_plan_agent/cli.py` para executar o fluxo mínimo do grafo com uma entrada de exemplo ou argumento simples.
+6. Criar ou atualizar testes em `tests/` cobrindo o estado, a validação e a execução mínima do grafo.
+7. Atualizar o README.md somente se houver mudança real nos comandos de execução.
+8. Validar tudo com comandos reais usando uv.
+
+Fluxo mínimo esperado:
+Entrada da história de usuário
+→ validação da entrada
+→ preparação de contexto mínimo
+→ geração de uma resposta provisória estruturada
+→ retorno do estado final
+
+Resultado esperado:
+- `state.py`, `graph.py`, `tools.py`, `validators.py` e `cli.py` criados ou atualizados.
+- Fluxo mínimo com LangGraph executando sem erro.
+- Testes cobrindo o fluxo básico.
+- `uv run test-plan-agent` funcionando.
+- `uv run pytest` passando.
+
+Ao final, informe os arquivos alterados, os comandos executados, o resultado dos testes e o que ficou preparado para a próxima etapa.
+```
+
+### Resultado esperado
+
+- Esqueleto do agente com `StateGraph` funcional.
+- Estado compartilhado definido.
+- Validação básica de entrada implementada.
+- Ferramenta mínima criada para evolução posterior.
+- CLI executando o fluxo básico.
+- Testes passando com `uv run pytest`.
+
+### Status
+
 - Planejado.
