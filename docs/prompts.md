@@ -301,4 +301,80 @@ Ao final, informe os arquivos alterados, os comandos executados, o resultado dos
 
 ### Status
 
+- Concluído e validado com `uv run test-plan-agent`, `uv run python -m test_plan_agent.cli "Como cliente, quero uma busca rápida e intuitiva para encontrar pedidos."` e `uv run pytest`.
+
+## Prompt 5: Testes e exemplos
+
+### Objetivo
+
+Ampliar a cobertura de testes e criar exemplos versionados de entrada e saída para demonstrar o funcionamento do agente de forma clara, reproduzível e alinhada aos critérios de entrega do mini-projeto.
+
+### Branch sugerido
+
+```text
+test/add-examples-and-coverage
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O setup inicial Python com uv já foi realizado.
+- O esqueleto do agente LangGraph já existe.
+- A ferramenta de leitura controlada da base local já existe.
+- A geração do plano de testes final em Markdown já foi implementada.
+- O CLI executa com `uv run test-plan-agent`.
+- A suíte atual passa com `uv run pytest`.
+
+Objetivo do projeto:
+Construir um agente com LangGraph que receba histórias de usuário, issues ou requisitos funcionais e gere planos de teste verificáveis com critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda, dados de exemplo, riscos de ambiguidade e sugestões de automação.
+
+Nesta etapa, adicione testes e exemplos de entrada/saída para tornar a solução demonstrável e pronta para automação futura em CI.
+
+Branch sugerido para esta etapa:
+test/add-examples-and-coverage
+
+Regras do projeto:
+- Faça somente o que for pedido nesta etapa.
+- Use documentação em português com acentuação correta conforme a ortografia padrão do Brasil.
+- Preserve as instruções do projeto em .github/copilot-instructions.md, .github/instructions/project-memory.instructions.md e CLAUDE.md.
+- Não altere a arquitetura principal do agente, salvo se uma falha de teste revelar ajuste pequeno e necessário.
+- Não adicione GitHub Actions nesta etapa; isso fica para a próxima etapa.
+- Mantenha exemplos sem dados sensíveis, tokens, chaves ou informações pessoais reais.
+
+Tarefas esperadas:
+1. Revisar a suíte atual em `tests/` e separar ou complementar testes quando isso melhorar a organização.
+2. Adicionar testes para execução completa do agente com história válida.
+3. Adicionar testes para histórias inválidas ou incompletas, incluindo ausência de ator, objetivo ou resultado esperado.
+4. Adicionar testes para termos ambíguos e para a presença das principais seções da resposta final.
+5. Adicionar testes para garantir que o contexto local de `data/test_templates.md` continua sendo usado.
+6. Criar exemplos versionados de entrada, por exemplo em `examples/input/` ou `data/examples/`, com histórias de usuário válidas, ambíguas e incompletas.
+7. Criar exemplos versionados de saída, por exemplo em `examples/output/`, mostrando planos de teste gerados em Markdown.
+8. Atualizar o README.md com uma seção de exemplos de execução, apontando para os arquivos criados e mantendo comandos com `uv`.
+9. Garantir que `uv run pytest` seja o comando principal de validação da suíte.
+10. Executar comandos reais de validação com uv.
+
+Resultado esperado:
+- Testes mais organizados e cobrindo os principais comportamentos do agente.
+- Exemplos de entrada versionados.
+- Exemplos de saída em Markdown versionados.
+- README.md apontando para os exemplos e comandos de execução.
+- `uv run test-plan-agent` funcionando.
+- `uv run pytest` passando.
+
+Ao final, informe os arquivos alterados, os comandos executados, o resultado dos testes e o que ficou preparado para a próxima etapa de CI/GitHub Actions.
+```
+
+### Resultado esperado
+
+- Suíte de testes ampliada e mais representativa.
+- Exemplos de entrada e saída versionados no repositório.
+- README atualizado com exemplos de uso.
+- Comando `uv run pytest` validando o comportamento principal do agente.
+- Projeto preparado para criação de workflow de CI na próxima etapa.
+
+### Status
+
 - Planejado.
