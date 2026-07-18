@@ -211,4 +211,4 @@ Ao final, informe os arquivos alterados, os comandos executados, o resultado dos
 
 ### Status
 
-- Planejado.
+- Concluído e validado com `uv run test-plan-agent` e `uv run pytest`.
