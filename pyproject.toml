@@ -1,0 +1,26 @@
+[project]
+name = "test-plan-agent"
+version = "0.1.0"
+description = "Agente para gerar planos de teste a partir de histórias de usuário, issues e requisitos funcionais."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langgraph>=0.6.0",
+    "python-dotenv>=1.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+]
+
+[project.scripts]
+test-plan-agent = "test_plan_agent.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.8.0,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
