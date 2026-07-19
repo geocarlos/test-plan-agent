@@ -88,31 +88,6 @@ strong {
 	padding: 8px 13px;
 }
 
-.metrics {
-	display: grid;
-	gap: 9px;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	margin-top: 16px;
-}
-
-.metric {
-	background: #fff;
-	border: 1px solid var(--line);
-	border-radius: 10px;
-	padding: 10px 12px;
-}
-
-.metric b {
-	color: var(--brand);
-	display: block;
-	font-size: 21px;
-}
-
-.metric span {
-	color: var(--muted);
-	font-size: 13px;
-}
-
 .diagram {
 	background: rgba(255, 255, 255, .82);
 	border: 1px solid var(--line);
@@ -134,6 +109,30 @@ footer {
 	color: var(--muted);
 	font-size: 14px;
 }
+
+.summary-list {
+	display: grid;
+	gap: 12px;
+	margin-top: 20px;
+}
+
+.summary-list div {
+	background: rgba(255, 255, 255, .82);
+	border: 1px solid var(--line);
+	border-left: 5px solid var(--brand-2);
+	border-radius: 12px;
+	font-size: 18px;
+	line-height: 1.28;
+	padding: 12px 14px;
+}
+
+.summary-list strong {
+	display: block;
+	font-size: 15px;
+	letter-spacing: .06em;
+	margin-bottom: 4px;
+	text-transform: uppercase;
+}
 </style>
 
 <div class="layout">
@@ -143,15 +142,14 @@ footer {
 
 # Test-Plan Agent
 
-## De histórias de usuário para planos de teste verificáveis
+## Planejamento de testes a partir de histórias de usuário
 
-Agente com LangGraph que identifica lacunas, usa contexto local controlado e gera critérios, cenários, riscos e sugestões de automação em Markdown.
+Histórias de usuário chegam com lacunas, ambiguidade e poucos critérios verificáveis. O agente automatiza a primeira análise de testabilidade e devolve um plano objetivo para QA e desenvolvimento.
 
-<div class="chips">
-	<span class="chip">LangGraph</span>
-	<span class="chip">LLM opcional</span>
-	<span class="chip">Fallback explícito</span>
-	<span class="chip">Saída Markdown</span>
+<div class="summary-list">
+	<div><strong>Proposta</strong>Transformar requisitos em critérios de aceite, cenários, riscos e sugestões de automação.</div>
+	<div><strong>Entrada</strong>História de usuário, issue ou requisito funcional, por argumento ou arquivo Markdown.</div>
+	<div><strong>Saída</strong>Plano de testes estruturado em Markdown.</div>
 </div>
 
 </div>
@@ -165,22 +163,22 @@ Agente com LangGraph que identifica lacunas, usa contexto local controlado e ger
 <div class="layout compact">
 <div>
 
-<div class="eyebrow">Fluxo e evidências</div>
+<div class="eyebrow">Ferramenta e fluxo</div>
 
-# Implementação demonstrável
+# Como o agente funciona
 
-## O grafo mantém estado, usa ferramenta local e valida a geração
+## Fluxo com LangGraph, contexto local e geração final
 
-<div class="metrics">
-	<div class="metric"><b>34</b><span>testes automatizados</span></div>
-	<div class="metric"><b>CI</b><span>GitHub Actions em PR e push</span></div>
-	<div class="metric"><b>data/</b><span>leitura restrita e validada</span></div>
-	<div class="metric"><b>docs/</b><span>prompts e apresentação versionados</span></div>
+<div class="summary-list">
+	<div><strong>Processo automatizado</strong>Validar a história, buscar contexto, identificar lacunas e montar o plano de testes.</div>
+	<div><strong>Ferramenta</strong>Leitura controlada de <code>data/test_templates.md</code>, restrita à pasta <code>data/</code>.</div>
+	<div><strong>Geração</strong>Usa LLM quando configurado; sem configuração, usa fallback determinístico explícito.</div>
 </div>
 
 <div class="chips">
-	<span class="chip">Entrada por argumento ou Markdown</span>
-	<span class="chip">Várias histórias por separador Markdown</span>
+	<span class="chip">Validação</span>
+	<span class="chip">Contexto</span>
+	<span class="chip">Plano final</span>
 </div>
 
 </div>
