@@ -41,34 +41,42 @@ O agente usa um `StateGraph` do LangGraph para organizar o fluxo em etapas seque
 
 ```mermaid
 flowchart LR
-    user_input[Entrada do usuário<br/>CLI ou arquivo Markdown] --> validate[Validação<br/>conteúdo, ator, ação e valor]
+    user_input[Entrada do usuário<br/>CLI ou arquivo Markdown] --> cli[CLI<br/>resolve uma ou várias histórias]
+    cli --> progress[Progresso em stderr<br/>sem poluir o Markdown]
+    cli --> graph_state[LangGraph StateGraph<br/>estado como memória]
+    graph_state --> validate[Validação<br/>conteúdo, ator, ação e valor]
     validate --> context[Ferramenta local<br/>data/test_templates.md]
-    context --> graph_state[LangGraph StateGraph<br/>estado como memória]
-    graph_state --> llm{LLM configurado?}
-    llm -->|sim| plan[Plano de testes<br/>gerado com LLM]
-    llm -->|não| fallback[Fallback determinístico<br/>com aviso explícito]
-    fallback --> output[Saída reproduzível<br/>critérios, cenários e riscos]
-    plan --> output[Saída reproduzível<br/>critérios, cenários e riscos]
+    context --> deterministic[Análise e rascunho determinístico<br/>critérios, cenários e riscos]
+    deterministic --> llm{Configuração de LLM?}
+    llm -->|ausente| fallback[Fallback determinístico<br/>com aviso explícito]
+    llm -->|válida| plan[Plano de testes<br/>gerado com LLM]
+    llm -->|inválida ou recusada| controlled_error[Erro controlado<br/>sem fallback silencioso]
+    fallback --> output[stdout<br/>Markdown final]
+    plan --> output
+    controlled_error --> stderr_error[stderr<br/>mensagem explícita]
 
     classDef inputClass fill:#dbeafe,stroke:#1d4ed8,color:#172554
     classDef validationClass fill:#fef3c7,stroke:#d97706,color:#451a03
     classDef toolClass fill:#dcfce7,stroke:#16a34a,color:#052e16
     classDef graphClass fill:#ede9fe,stroke:#7c3aed,color:#2e1065
     classDef outputClass fill:#ffe4e6,stroke:#e11d48,color:#4c0519
+    classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#450a0a
 
-    class user_input inputClass
+    class user_input,cli inputClass
     class validate validationClass
     class context toolClass
-    class graph_state,llm graphClass
-    class plan,output outputClass
+    class graph_state,deterministic,llm graphClass
+    class plan,output,progress,stderr_error outputClass
     class fallback validationClass
+    class controlled_error errorClass
 ```
 
 ### Fluxo de execução
 
 ```mermaid
 flowchart TD
-    start_node((Início)) --> validate_input[validate_input]
+    start_node((Início)) --> progress_start[stderr: Processando história N/M]
+    progress_start --> validate_input[validate_input]
     validate_input --> prepare_context[prepare_context]
     prepare_context --> analyze_story[analyze_story]
     analyze_story --> acceptance[generate_acceptance_criteria]
@@ -78,19 +86,29 @@ flowchart TD
     example_data --> risks[identify_ambiguity_risks]
     risks --> automation[suggest_automation]
     automation --> final_answer[format_final_answer]
-    final_answer --> finish_node((Fim))
+    final_answer --> llm_config{Configuração de LLM?}
+    llm_config -->|ausente| deterministic_fallback[Fallback determinístico<br/>com aviso no Markdown]
+    llm_config -->|válida| llm_request[generate_plan_with_llm<br/>aguarda resposta do provedor]
+    llm_config -->|inválida ou recusada| llm_error[Erro controlado<br/>sem fallback]
+    deterministic_fallback --> stdout_markdown[stdout: Markdown final]
+    llm_request --> stdout_markdown
+    llm_error --> stderr_message[stderr: mensagem explícita]
+    stdout_markdown --> finish_node((Fim))
+    stderr_message --> finish_node
 
     classDef boundaryClass fill:#f8fafc,stroke:#64748b,color:#0f172a
     classDef validationClass fill:#fef3c7,stroke:#d97706,color:#451a03
     classDef contextClass fill:#dcfce7,stroke:#16a34a,color:#052e16
     classDef generationClass fill:#ede9fe,stroke:#7c3aed,color:#2e1065
     classDef finalClass fill:#ffe4e6,stroke:#e11d48,color:#4c0519
+    classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#450a0a
 
     class start_node,finish_node boundaryClass
     class validate_input validationClass
     class prepare_context contextClass
-    class analyze_story,acceptance,scenarios,edge_cases,example_data,risks,automation generationClass
-    class final_answer finalClass
+    class analyze_story,acceptance,scenarios,edge_cases,example_data,risks,automation,llm_config,llm_request generationClass
+    class final_answer,progress_start,deterministic_fallback,stdout_markdown,stderr_message finalClass
+    class llm_error errorClass
 ```
 
 Fluxo principal:
@@ -103,8 +121,10 @@ Fluxo principal:
 6. sugerir casos de borda e dados de exemplo;
 7. identificar riscos de ambiguidade;
 8. sugerir automação;
-9. gerar a resposta final com LLM quando houver configuração válida;
-10. usar fallback determinístico com aviso explícito quando não houver configuração de LLM.
+9. emitir progresso em `stderr` durante a execução sem alterar a saída Markdown;
+10. gerar a resposta final com LLM quando houver configuração válida;
+11. usar fallback determinístico com aviso explícito quando não houver configuração de LLM;
+12. falhar com erro controlado, sem fallback silencioso, quando a configuração de LLM existir mas estiver inválida ou for recusada.
 
 ## Planejamento
 
