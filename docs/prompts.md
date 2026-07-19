@@ -667,3 +667,75 @@ Ao final, informe os arquivos alterados, comandos executados, resultado dos test
 ### Status
 
 - Concluído e validado com `uv sync`, `uv run pytest` e testes com mocks cobrindo LLM configurado, fallback por ausência de configuração e erro controlado sem fallback.
+
+## Fix Prompt: Entrada inválida não deve chamar LLM
+
+### Objetivo
+
+Corrigir o fluxo do agente para que entradas bloqueantes inválidas não acionem geração com LLM nem fallback de plano completo, retornando uma resposta controlada que explique as lacunas e solicite correção da história antes da geração definitiva.
+
+### Branch sugerido
+
+```text
+fix/skip-llm-for-invalid-input
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O agente usa LangGraph com nós de validação, contexto local, análise, geração de critérios, cenários, riscos, automação e resposta final.
+- O agente usa LLM como caminho principal quando há configuração válida no ambiente.
+- O fallback determinístico é usado quando não há configuração de LLM.
+- O CLI aceita história por argumento e uma ou mais histórias por arquivo Markdown.
+- A documentação e os diagramas estão em revisão em outro branch, mas esse branch depende do comportamento correto do agente.
+
+Problema observado:
+Quando `validate_user_story` retorna erros bloqueantes, por exemplo para uma entrada curta como `curta`, o grafo continua executando todos os nós e ainda chama o LLM quando há configuração válida. Isso gera custo e latência desnecessários, pode produzir uma resposta aparentemente definitiva para uma entrada inválida e enfraquece o papel da validação no fluxo do agente.
+
+Objetivo do fix:
+1. Criar um branch de correção a partir de `develop`, usando `fix/skip-llm-for-invalid-input`.
+2. Analisar `src/test_plan_agent/graph.py`, `src/test_plan_agent/validators.py`, `src/test_plan_agent/state.py`, `src/test_plan_agent/cli.py` e os testes atuais.
+3. Diferenciar validações bloqueantes de ambiguidades/riscos não bloqueantes.
+4. Quando houver `validation_errors` bloqueantes, não chamar `generate_plan_with_llm`.
+5. Quando houver `validation_errors` bloqueantes, não gerar um plano de testes completo como se a história fosse válida.
+6. Retornar uma resposta Markdown controlada explicando que a entrada precisa ser corrigida, listando as lacunas detectadas e dando exemplos de como reescrever a história.
+7. Manter metadados do estado coerentes, por exemplo `provisional_response.status = "invalid"`, `fallback_used = False` e um `generation_mode` específico como `validation_failed` ou equivalente.
+8. Garantir que ambiguidades não bloqueantes, como termos subjetivos em uma história estruturalmente válida, continuem seguindo para geração com LLM ou fallback e apareçam como riscos no plano.
+9. Garantir que configuração válida de LLM continue sendo usada para histórias válidas.
+10. Garantir que configuração inválida de LLM continue falhando de forma controlada para histórias válidas, sem fallback silencioso.
+11. Atualizar ou criar testes cobrindo:
+	- entrada curta não chama LLM;
+	- entrada sem ator/objetivo/resultado não chama LLM;
+	- resposta inválida contém lacunas e orientação de correção;
+	- história válida e ambígua ainda pode chamar LLM quando configurado;
+	- fallback determinístico continua funcionando para história válida sem configuração de LLM;
+	- CLI mantém saída Markdown em stdout e progresso/erros em stderr quando aplicável.
+12. Atualizar README somente se necessário para documentar a diferença entre entrada inválida bloqueante e ambiguidade não bloqueante.
+13. Não alterar os diagramas da apresentação neste branch; eles serão retomados depois no branch de documentação.
+14. Validar com comandos reais usando uv.
+
+Resultado esperado:
+- Entradas bloqueantes inválidas não acionam LLM.
+- Entradas bloqueantes inválidas retornam uma resposta controlada, curta e útil para correção da história.
+- Histórias válidas continuam usando LLM quando configurado e fallback determinístico quando não configurado.
+- Ambiguidades não bloqueantes continuam sendo tratadas como riscos no plano.
+- Testes automatizados cobrem os novos caminhos.
+- `uv run pytest` passa.
+
+Ao final, informe arquivos alterados, comandos executados, resultado dos testes e limitações encontradas. Não faça merge automaticamente; após concluir, retornaremos ao branch de documentação para ajustar README, gráficos e slides com base no comportamento corrigido.
+```
+
+### Resultado esperado
+
+- Correção documentada em branch próprio de fix.
+- Fluxo do agente bloqueia chamada ao LLM para entradas inválidas.
+- Resposta inválida controlada e orientada à correção.
+- Histórias válidas e ambiguidades não bloqueantes preservam o comportamento de geração.
+- Testes cobrindo o comportamento corrigido.
+
+### Status
+
+- Prompt registrado para execução em sessão dedicada.
