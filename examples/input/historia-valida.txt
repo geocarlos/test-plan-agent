@@ -1,0 +1,1 @@
+Como cliente autenticado, quero consultar meus pedidos recentes para acompanhar a entrega.

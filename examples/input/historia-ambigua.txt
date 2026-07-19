@@ -1,0 +1,1 @@
+Como cliente, quero uma busca rápida e intuitiva para encontrar pedidos.

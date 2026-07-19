@@ -14,7 +14,7 @@ O guia inicial do agente está em [docs/guia-geral-prompt.md](docs/guia-geral-pr
 
 ## Base local de testes
 
-O fluxo mínimo usa uma base local em [data/test_templates.md](data/test_templates.md) como referência controlada para critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda e checklist de testabilidade.
+O fluxo usa uma base local em [data/test_templates.md](data/test_templates.md) como referência controlada para critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda e checklist de testabilidade.
 
 A ferramenta de leitura permite apenas arquivos `.md` e `.txt` dentro da pasta `data/`, com limite de tamanho e erros controlados para caminhos inválidos, arquivos inexistentes, extensões não permitidas e arquivos grandes demais.
 
@@ -51,10 +51,16 @@ Preencha o arquivo `.env` local apenas com valores reais da sua máquina. Esse a
 
 ### Execução
 
-O ponto de entrada inicial pode ser executado com:
+O ponto de entrada gera um plano de testes em Markdown com uma história padrão:
 
 ```bash
 uv run test-plan-agent
+```
+
+Também é possível informar uma história pela linha de comando:
+
+```bash
+uv run test-plan-agent "Como cliente autenticado, quero consultar meus pedidos recentes para acompanhar a entrega."
 ```
 
 Também é possível executar o módulo diretamente:
@@ -63,9 +69,31 @@ Também é possível executar o módulo diretamente:
 uv run python -m test_plan_agent.cli
 ```
 
+### Exemplos versionados
+
+Entradas de exemplo estão em [examples/input](examples/input) e saídas geradas em Markdown estão em [examples/output](examples/output).
+
+Histórias disponíveis:
+
+- [examples/input/historia-valida.txt](examples/input/historia-valida.txt): história completa para geração do plano principal.
+- [examples/input/historia-ambigua.txt](examples/input/historia-ambigua.txt): história com termos subjetivos detectados como ambíguos.
+- [examples/input/historia-incompleta.txt](examples/input/historia-incompleta.txt): requisito incompleto com lacunas de ator e resultado esperado.
+
+Saídas correspondentes:
+
+- [examples/output/plano-historia-valida.md](examples/output/plano-historia-valida.md)
+- [examples/output/plano-historia-ambigua.md](examples/output/plano-historia-ambigua.md)
+- [examples/output/plano-historia-incompleta.md](examples/output/plano-historia-incompleta.md)
+
+Para reproduzir uma execução com uma entrada versionada no PowerShell:
+
+```powershell
+uv run test-plan-agent (Get-Content .\examples\input\historia-valida.txt -Raw)
+```
+
 ### Testes
 
-Execute a suíte inicial com:
+Execute a suíte principal com:
 
 ```bash
 uv run pytest
@@ -77,4 +105,4 @@ O fluxo de branches do projeto está documentado em [docs/gitflow.md](docs/gitfl
 
 ## Status
 
-Projeto em fase inicial, com base Python configurada para as próximas etapas de implementação com LangGraph.
+Projeto com grafo LangGraph estruturado, leitura controlada da base local e geração determinística de plano de testes em Markdown.
