@@ -1,4 +1,7 @@
+from argparse import Namespace
+
 from test_plan_agent import __version__
+from test_plan_agent.cli import DEFAULT_USER_STORY, read_user_story_file, resolve_user_story
 from test_plan_agent.graph import run_agent
 from test_plan_agent.state import create_initial_state
 from test_plan_agent.tools import LocalFileReadError, read_local_data_file
@@ -38,6 +41,45 @@ def test_create_initial_state() -> None:
     assert state["automation_suggestions"] == []
     assert state["final_answer"] == ""
     assert state["provisional_response"] == {}
+
+
+def test_resolve_user_story_uses_default_when_no_input() -> None:
+    args = Namespace(user_story=None, story_file=None)
+
+    assert resolve_user_story(args) == DEFAULT_USER_STORY
+
+
+def test_read_user_story_file_reads_markdown(tmp_path) -> None:
+    story_file = tmp_path / "historia.md"
+    story_file.write_text(
+        "# História válida\n\nComo cliente, quero consultar pedidos recentes para acompanhar entregas.\n",
+        encoding="utf-8",
+    )
+
+    assert read_user_story_file(str(story_file)) == "Como cliente, quero consultar pedidos recentes para acompanhar entregas."
+
+
+def test_read_user_story_file_rejects_non_markdown(tmp_path) -> None:
+    story_file = tmp_path / "historia.txt"
+    story_file.write_text("Como cliente, quero consultar pedidos recentes.", encoding="utf-8")
+
+    try:
+        read_user_story_file(str(story_file))
+    except ValueError as error:
+        assert str(error) == "Informe um arquivo Markdown com extensão .md ou .markdown."
+    else:
+        raise AssertionError("A leitura deveria falhar para arquivo que não é Markdown.")
+
+
+def test_resolve_user_story_rejects_argument_and_file() -> None:
+    args = Namespace(user_story="Como cliente, quero consultar pedidos.", story_file="historia.md")
+
+    try:
+        resolve_user_story(args)
+    except ValueError as error:
+        assert str(error) == "Use uma história no argumento ou --file, não ambos."
+    else:
+        raise AssertionError("A resolução deveria falhar com argumento e arquivo juntos.")
 
 
 def test_validate_user_story_requires_content() -> None:
