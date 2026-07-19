@@ -69,9 +69,31 @@ Também é possível executar o módulo diretamente:
 uv run python -m test_plan_agent.cli
 ```
 
+### Exemplos versionados
+
+Entradas de exemplo estão em [examples/input](examples/input) e saídas geradas em Markdown estão em [examples/output](examples/output).
+
+Histórias disponíveis:
+
+- [examples/input/historia-valida.txt](examples/input/historia-valida.txt): história completa para geração do plano principal.
+- [examples/input/historia-ambigua.txt](examples/input/historia-ambigua.txt): história com termos subjetivos detectados como ambíguos.
+- [examples/input/historia-incompleta.txt](examples/input/historia-incompleta.txt): requisito incompleto com lacunas de ator e resultado esperado.
+
+Saídas correspondentes:
+
+- [examples/output/plano-historia-valida.md](examples/output/plano-historia-valida.md)
+- [examples/output/plano-historia-ambigua.md](examples/output/plano-historia-ambigua.md)
+- [examples/output/plano-historia-incompleta.md](examples/output/plano-historia-incompleta.md)
+
+Para reproduzir uma execução com uma entrada versionada no PowerShell:
+
+```powershell
+uv run test-plan-agent (Get-Content .\examples\input\historia-valida.txt -Raw)
+```
+
 ### Testes
 
-Execute a suíte inicial com:
+Execute a suíte principal com:
 
 ```bash
 uv run pytest
