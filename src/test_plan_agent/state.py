@@ -1,6 +1,10 @@
 """Estado compartilhado do fluxo LangGraph."""
 
+from collections.abc import Callable
 from typing import Any, TypedDict
+
+
+ProgressCallback = Callable[[str], None]
 
 
 class AgentState(TypedDict, total=False):
@@ -17,7 +21,12 @@ class AgentState(TypedDict, total=False):
     ambiguity_risks: list[str]
     automation_suggestions: list[str]
     final_answer: str
+    generation_mode: str
+    fallback_used: bool
+    llm_provider: str
+    llm_model: str
     provisional_response: dict[str, Any]
+    _progress_callback: ProgressCallback
 
 
 def create_initial_state(user_story: str) -> AgentState:
@@ -34,5 +43,9 @@ def create_initial_state(user_story: str) -> AgentState:
         "ambiguity_risks": [],
         "automation_suggestions": [],
         "final_answer": "",
+        "generation_mode": "",
+        "fallback_used": False,
+        "llm_provider": "",
+        "llm_model": "",
         "provisional_response": {},
     }

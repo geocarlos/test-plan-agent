@@ -508,3 +508,162 @@ Resultado esperado:
 ### Status
 
 - Concluído e validado com `uv run pytest`, `uv run test-plan-agent --file .\examples\input\historia-valida.md` e `git diff --check`.
+
+## Fix Prompt: Arquivo Markdown com múltiplas user stories
+
+### Objetivo
+
+Corrigir o comportamento do CLI ao receber um arquivo Markdown contendo várias user stories, garantindo que cada história seja processada separadamente pelo agente e que o resultado final seja gerado com um plano de testes por história.
+
+### Branch sugerido
+
+```text
+fix/multiple-user-stories-file
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O agente com LangGraph já gera planos de teste em Markdown.
+- O CLI já aceita entrada textual e entrada por arquivo Markdown usando `--file`.
+- A documentação, exemplos, testes e CI já existem.
+- O terminal deve estar dentro de `./test-plan-agent`.
+- O branch base é `develop`, a partir do qual o branch de correção deve ser criado.
+
+Problema observado:
+O comando abaixo não gera o resultado esperado quando o arquivo informado contém várias histórias de usuário:
+
+`uv run .\test-plan-agent\src\test_plan_agent\cli.py --file .\user_stories_airtable_crm.md > output.md`
+
+O arquivo Markdown possui múltiplas user stories separadas por blocos, mas o CLI concatena todo o conteúdo em uma única entrada. Com isso, o grafo executa uma vez só e produz um plano de testes genérico para todas as histórias misturadas.
+
+Objetivo do fix:
+1. Criar um branch de correção a partir de `develop`, usando nome semântico iniciado por `fix/`.
+2. Analisar como o agente está implementado, principalmente o caminho de entrada por arquivo no CLI.
+3. Ajustar a leitura de arquivos Markdown para aceitar uma ou mais user stories.
+4. Quando o arquivo tiver várias histórias separadas por `---`, executar o agente uma vez por história.
+5. Manter compatibilidade com arquivos Markdown contendo uma única história.
+6. Garantir que o comando direto com `uv run caminho\cli.py` funcione a partir da raiz do workspace.
+7. Corrigir problemas de acentuação na saída redirecionada para `output.md` no Windows.
+8. Criar testes para arquivos com múltiplas user stories.
+9. Adicionar teste de ponta a ponta do CLI garantindo que múltiplas histórias gerem múltiplos planos.
+10. Atualizar o README.md para documentar o suporte a várias histórias em um mesmo arquivo Markdown.
+11. Registrar este fix em `docs/prompts.md` como uma seção independente, sem usar a numeração sequencial dos prompts anteriores.
+12. Validar tudo com comandos reais usando `uv`.
+
+Resultado esperado:
+- Branch `fix/multiple-user-stories-file` criado a partir de `develop`.
+- CLI lendo arquivos Markdown com uma ou várias histórias.
+- Arquivos com múltiplas histórias separados por `---` gerando um plano de testes para cada história.
+- Saída redirecionada para `output.md` com acentuação correta.
+- Comando direto com `uv run .\test-plan-agent\src\test_plan_agent\cli.py --file .\user_stories_airtable_crm.md > output.md` funcionando.
+- Testes automatizados cobrindo parser de múltiplas histórias e comportamento final do CLI.
+- README.md atualizado com o novo comportamento.
+- `uv run pytest` passando.
+
+Ao final, informe os arquivos alterados, comandos executados, resultado dos testes e o status do branch, sem realizar commit automaticamente.
+```
+
+### Resultado esperado
+
+- Correção documentada em branch próprio de fix.
+- Leitura de Markdown com múltiplas user stories suportada no CLI.
+- Execução do agente feita individualmente para cada história encontrada.
+- Testes cobrindo parser e execução final do CLI com múltiplas histórias.
+- README atualizado com o formato esperado para arquivos Markdown com vários blocos.
+
+### Status
+
+- Concluído e validado com `uv run pytest` e execução do comando original com redirecionamento para `output.md`.
+
+## Prompt 8: Suporte a LLM com fallback determinístico
+
+### Objetivo
+
+Evoluir o agente para usar um LLM como caminho principal de geração do plano de testes, mantendo a geração determinística atual apenas como fallback explícito quando nenhuma configuração de LLM estiver disponível.
+
+### Branch sugerido
+
+```text
+feature/add-llm-support
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O projeto Python usa uv.
+- O agente com LangGraph já gera planos de teste em Markdown.
+- A geração atual é determinística e foi adequada para a construção inicial do agente.
+- O CLI aceita entrada textual e entrada por arquivo Markdown usando `--file`.
+- Arquivos Markdown podem conter uma ou mais user stories separadas por `---`.
+- A ferramenta de leitura controlada da base local já existe.
+- A suíte de testes, exemplos versionados, documentação e CI já existem.
+
+Objetivo desta etapa:
+Adicionar suporte real a LLM como caminho principal de geração do plano de testes, mantendo a geração determinística atual apenas como fallback quando nenhuma configuração de LLM estiver disponível no ambiente.
+
+Branch sugerido para esta etapa:
+feature/add-llm-support
+
+Regras do projeto:
+- Faça somente o que for pedido nesta etapa.
+- Use documentação em português com acentuação correta conforme a ortografia padrão do Brasil.
+- Preserve as instruções do projeto em .github/copilot-instructions.md, .github/instructions/project-memory.instructions.md e CLAUDE.md.
+- O agente deve usar LLM quando houver configuração válida disponível nas variáveis de ambiente.
+- A geração determinística atual deve permanecer como fallback, mas não deve ser o caminho principal quando houver LLM configurado.
+- O usuário deve ser informado claramente quando o fallback determinístico for usado, pois isso pode indicar ausência acidental de configuração.
+- O fallback só pode ser usado quando nenhuma configuração de LLM estiver disponível.
+- O fallback não deve ser usado quando variáveis de ambiente de LLM estiverem setadas, mas forem inválidas, recusadas ou resultarem em erro de autenticação/autorização.
+- Em caso de chave inválida, credencial recusada, modelo inexistente, erro de permissão ou erro equivalente do provedor, o agente deve falhar com mensagem controlada e explícita, sem mascarar o problema com o fallback.
+- Não exponha chaves, tokens, secrets ou valores sensíveis em logs, mensagens de erro, README, testes ou exemplos.
+- Mantenha a base local `data/test_templates.md` como contexto de apoio para a geração com LLM.
+- Preserve a compatibilidade com execução local sem LLM configurado, usando fallback determinístico informado ao usuário.
+
+Tarefas esperadas:
+1. Analisar a arquitetura atual do agente, especialmente `graph.py`, `prompts.py`, `state.py`, `tools.py` e `cli.py`.
+2. Escolher uma integração de LLM compatível com LangGraph e com configuração por variáveis de ambiente, preferindo uma abordagem simples e segura.
+3. Adicionar as dependências necessárias para chamada de LLM, sem incluir provedores ou bibliotecas desnecessárias.
+4. Definir variáveis de ambiente esperadas no `.env.example`, sem valores reais.
+5. Implementar detecção explícita de configuração de LLM disponível no ambiente.
+6. Implementar um caminho principal de geração com LLM usando a história de usuário, os prompts internos e o contexto local de `data/test_templates.md`.
+7. Preservar a geração determinística atual como fallback reutilizável quando nenhuma configuração de LLM estiver disponível.
+8. Informar claramente na saída final ou em metadados do estado quando o fallback determinístico for usado.
+9. Garantir que o fallback não seja acionado quando houver variáveis de ambiente de LLM setadas, mas inválidas.
+10. Tratar erros de autenticação, autorização, modelo inválido, credencial recusada e configuração incorreta com mensagens controladas e sem vazamento de secrets.
+11. Atualizar testes para cobrir geração com fallback por ausência de configuração, aviso de fallback, tentativa de uso de LLM quando configuração existe e erro controlado quando credenciais configuradas forem inválidas.
+12. Usar mocks ou fakes nos testes para evitar chamadas reais ao provedor de LLM.
+13. Atualizar o README.md documentando como configurar o LLM, quais variáveis de ambiente são esperadas, como funciona o fallback e em quais situações o fallback não será usado.
+14. Atualizar exemplos ou documentação somente quando isso melhorar a demonstração do novo comportamento.
+15. Validar tudo com comandos reais usando uv.
+
+Resultado esperado:
+- O agente usa LLM como caminho principal quando houver configuração válida no ambiente.
+- A geração determinística atual permanece disponível apenas como fallback por ausência total de configuração de LLM.
+- O usuário é informado quando o fallback determinístico for usado.
+- Credenciais inválidas ou recusadas geram erro controlado, sem uso silencioso do fallback.
+- A base local de templates continua sendo usada como contexto de apoio.
+- Testes cobrem os caminhos com LLM mockado, fallback por ausência de configuração e erro por configuração inválida.
+- `.env.example` e README documentam a configuração necessária sem expor secrets.
+- `uv run pytest` passando.
+
+Ao final, informe os arquivos alterados, comandos executados, resultado dos testes, limitações encontradas e como validar manualmente o uso real com LLM sem compartilhar credenciais.
+```
+
+### Resultado esperado
+
+- Integração com LLM implementada como caminho principal de geração do plano de testes.
+- Fallback determinístico mantido apenas para ausência total de configuração de LLM.
+- Aviso explícito ao usuário quando o fallback for usado.
+- Erros de credenciais inválidas tratados sem fallback silencioso.
+- Testes com mocks cobrindo os principais caminhos de execução.
+- README e `.env.example` atualizados com configuração segura.
+
+### Status
+
+- Concluído e validado com `uv sync`, `uv run pytest` e testes com mocks cobrindo LLM configurado, fallback por ausência de configuração e erro controlado sem fallback.
