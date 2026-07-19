@@ -454,3 +454,57 @@ Ao final, informe os arquivos alterados, os comandos executados, as validações
 ### Status
 
 - Concluído e validado com `uv sync --locked`, `uv run pytest`, `uv run test-plan-agent` e execução do CLI com uma história curta gerando Markdown.
+
+## Prompt 7: Entrada por Markdown e visualização da documentação
+
+### Objetivo
+
+Melhorar a experiência de uso e apresentação do agente adicionando entrada por arquivo Markdown no CLI e diagramas Mermaid coloridos na documentação principal.
+
+### Branch sugerido
+
+```text
+docs/final-delivery-review
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O agente com LangGraph já gera planos de teste em Markdown.
+- O CLI já aceita uma história de usuário como argumento de linha de comando.
+- O projeto possui README, exemplos versionados, testes automatizados e CI.
+
+Objetivo desta melhoria:
+Adicionar suporte para informar a história de usuário por caminho de arquivo Markdown e melhorar a documentação com visualizações Mermaid coloridas.
+
+Tarefas esperadas:
+1. Atualizar o CLI para aceitar uma opção como `--file` ou `-f` apontando para um arquivo Markdown.
+2. Ler o conteúdo do arquivo Markdown como entrada do agente.
+3. Evitar uso simultâneo de argumento textual e arquivo.
+4. Retornar erros controlados para extensão inválida ou arquivo inexistente.
+5. Adicionar testes cobrindo entrada padrão, leitura de Markdown, extensão inválida e conflito entre argumento e arquivo.
+6. Criar um exemplo versionado de entrada Markdown.
+7. Atualizar o README.md com o novo modo de execução.
+8. Adicionar ao README.md uma visualização geral e um fluxo do agente usando Mermaid com cores por tipo de etapa.
+9. Validar tudo com comandos reais usando uv.
+
+Resultado esperado:
+- CLI aceitando entrada por arquivo Markdown.
+- README com diagramas Mermaid coloridos e visão geral do agente.
+- Exemplo Markdown versionado.
+- Testes passando.
+```
+
+### Resultado esperado
+
+- Nova opção `--file` no CLI para ler histórias a partir de arquivos `.md` ou `.markdown`.
+- Exemplo versionado em `examples/input/historia-valida.md`.
+- README com comandos de execução por arquivo e diagramas Mermaid coloridos.
+- Testes cobrindo a resolução de entrada por argumento, arquivo e casos inválidos.
+
+### Status
+
+- Concluído e validado com `uv run pytest`, `uv run test-plan-agent --file .\examples\input\historia-valida.md` e `git diff --check`.
