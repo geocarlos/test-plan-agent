@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 from test_plan_agent import __version__
-from test_plan_agent.cli import DEFAULT_USER_STORY, read_user_story_file, resolve_user_story
+from test_plan_agent.cli import DEFAULT_USER_STORY, main, read_user_stories_file, read_user_story_file, resolve_user_stories, resolve_user_story
 from test_plan_agent.graph import run_agent
 from test_plan_agent.state import create_initial_state
 from test_plan_agent.tools import LocalFileReadError, read_local_data_file
@@ -57,6 +57,73 @@ def test_read_user_story_file_reads_markdown(tmp_path) -> None:
     )
 
     assert read_user_story_file(str(story_file)) == "Como cliente, quero consultar pedidos recentes para acompanhar entregas."
+
+
+def test_read_user_stories_file_splits_markdown_sections(tmp_path) -> None:
+    story_file = tmp_path / "historias.md"
+    story_file.write_text(
+        """## Histórias de Usuário para CRM
+
+### 1. Cadastro de Leads
+- **Como** representante de vendas,
+- **Quero** registrar novos leads,
+- **Para que** eu possa acompanhar o progresso no funil.
+
+---
+
+### 2. Atualização de Status
+- **Como** gerente comercial,
+- **Quero** atualizar o status de cada oportunidade,
+- **Para que** eu tenha visibilidade clara do pipeline.
+""",
+        encoding="utf-8",
+    )
+
+    assert read_user_stories_file(str(story_file)) == [
+        "Como representante de vendas, Quero registrar novos leads, Para que eu possa acompanhar o progresso no funil.",
+        "Como gerente comercial, Quero atualizar o status de cada oportunidade, Para que eu tenha visibilidade clara do pipeline.",
+    ]
+
+
+def test_resolve_user_stories_uses_file_sections(tmp_path) -> None:
+    story_file = tmp_path / "historias.md"
+    story_file.write_text(
+        "Como cliente, quero consultar pedidos para acompanhar entregas.\n\n---\n\nComo gestor, quero ver métricas para acompanhar resultados.",
+        encoding="utf-8",
+    )
+    args = Namespace(user_story=None, story_file=str(story_file))
+
+    assert resolve_user_stories(args) == [
+        "Como cliente, quero consultar pedidos para acompanhar entregas.",
+        "Como gestor, quero ver métricas para acompanhar resultados.",
+    ]
+
+
+def test_main_generates_one_plan_per_story_from_markdown_file(tmp_path, monkeypatch, capsys) -> None:
+    story_file = tmp_path / "historias.md"
+    story_file.write_text(
+        """# Histórias
+
+### 1. Cadastro
+Como representante de vendas, quero registrar novos leads para acompanhar oportunidades.
+
+---
+
+### 2. Relatórios
+Como diretor de vendas, quero gerar relatórios semanais para avaliar a performance da equipe.
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("sys.argv", ["test-plan-agent", "--file", str(story_file)])
+
+    main()
+
+    output = capsys.readouterr().out
+    assert output.count("# Plano de Testes") == 2
+    assert "## História 1" in output
+    assert "## História 2" in output
+    assert "Como representante de vendas" in output
+    assert "Como diretor de vendas" in output
 
 
 def test_read_user_story_file_rejects_non_markdown(tmp_path) -> None:

@@ -177,6 +177,8 @@ Também é possível informar um arquivo Markdown com a história:
 uv run test-plan-agent --file examples/input/historia-valida.md
 ```
 
+Arquivos Markdown também podem conter várias histórias, desde que cada bloco esteja separado por `---`. Nesse caso, o agente gera um plano de testes para cada história encontrada.
+
 No Windows PowerShell:
 
 ```powershell
