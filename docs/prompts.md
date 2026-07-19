@@ -508,3 +508,73 @@ Resultado esperado:
 ### Status
 
 - Concluído e validado com `uv run pytest`, `uv run test-plan-agent --file .\examples\input\historia-valida.md` e `git diff --check`.
+
+## Fix Prompt: Arquivo Markdown com múltiplas user stories
+
+### Objetivo
+
+Corrigir o comportamento do CLI ao receber um arquivo Markdown contendo várias user stories, garantindo que cada história seja processada separadamente pelo agente e que o resultado final seja gerado com um plano de testes por história.
+
+### Branch sugerido
+
+```text
+fix/multiple-user-stories-file
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O agente com LangGraph já gera planos de teste em Markdown.
+- O CLI já aceita entrada textual e entrada por arquivo Markdown usando `--file`.
+- A documentação, exemplos, testes e CI já existem.
+- O terminal deve estar dentro de `./test-plan-agent`.
+- O branch base é `develop`, a partir do qual o branch de correção deve ser criado.
+
+Problema observado:
+O comando abaixo não gera o resultado esperado quando o arquivo informado contém várias histórias de usuário:
+
+`uv run .\test-plan-agent\src\test_plan_agent\cli.py --file .\user_stories_airtable_crm.md > output.md`
+
+O arquivo Markdown possui múltiplas user stories separadas por blocos, mas o CLI concatena todo o conteúdo em uma única entrada. Com isso, o grafo executa uma vez só e produz um plano de testes genérico para todas as histórias misturadas.
+
+Objetivo do fix:
+1. Criar um branch de correção a partir de `develop`, usando nome semântico iniciado por `fix/`.
+2. Analisar como o agente está implementado, principalmente o caminho de entrada por arquivo no CLI.
+3. Ajustar a leitura de arquivos Markdown para aceitar uma ou mais user stories.
+4. Quando o arquivo tiver várias histórias separadas por `---`, executar o agente uma vez por história.
+5. Manter compatibilidade com arquivos Markdown contendo uma única história.
+6. Garantir que o comando direto com `uv run caminho\cli.py` funcione a partir da raiz do workspace.
+7. Corrigir problemas de acentuação na saída redirecionada para `output.md` no Windows.
+8. Criar testes para arquivos com múltiplas user stories.
+9. Adicionar teste de ponta a ponta do CLI garantindo que múltiplas histórias gerem múltiplos planos.
+10. Atualizar o README.md para documentar o suporte a várias histórias em um mesmo arquivo Markdown.
+11. Registrar este fix em `docs/prompts.md` como uma seção independente, sem usar a numeração sequencial dos prompts anteriores.
+12. Validar tudo com comandos reais usando `uv`.
+
+Resultado esperado:
+- Branch `fix/multiple-user-stories-file` criado a partir de `develop`.
+- CLI lendo arquivos Markdown com uma ou várias histórias.
+- Arquivos com múltiplas histórias separados por `---` gerando um plano de testes para cada história.
+- Saída redirecionada para `output.md` com acentuação correta.
+- Comando direto com `uv run .\test-plan-agent\src\test_plan_agent\cli.py --file .\user_stories_airtable_crm.md > output.md` funcionando.
+- Testes automatizados cobrindo parser de múltiplas histórias e comportamento final do CLI.
+- README.md atualizado com o novo comportamento.
+- `uv run pytest` passando.
+
+Ao final, informe os arquivos alterados, comandos executados, resultado dos testes e o status do branch, sem realizar commit automaticamente.
+```
+
+### Resultado esperado
+
+- Correção documentada em branch próprio de fix.
+- Leitura de Markdown com múltiplas user stories suportada no CLI.
+- Execução do agente feita individualmente para cada história encontrada.
+- Testes cobrindo parser e execução final do CLI com múltiplas histórias.
+- README atualizado com o formato esperado para arquivos Markdown com vários blocos.
+
+### Status
+
+- Concluído e validado com `uv run pytest` e execução do comando original com redirecionamento para `output.md`.
