@@ -366,23 +366,107 @@ def test_main_reports_llm_error_as_controlled_exit(monkeypatch) -> None:
     assert "Configuração de LLM incompleta" in str(error.value.code)
 
 
-def test_run_agent_reports_invalid_short_story() -> None:
+def test_run_agent_reports_invalid_short_story_without_fallback() -> None:
     final_state = run_agent("curta")
 
     assert final_state["validation_errors"] == [
         "A entrada deve ter pelo menos 20 caracteres para análise inicial."
     ]
     assert final_state["provisional_response"]["status"] == "invalid"
-    assert "Lacuna: A entrada deve ter pelo menos 20 caracteres" in final_state["final_answer"]
+    assert final_state["generation_mode"] == "validation_failed"
+    assert final_state["fallback_used"] is False
+    assert final_state["acceptance_criteria"] == []
+    assert final_state["test_scenarios"] == []
+    assert "# Entrada precisa de correção" in final_state["final_answer"]
+    assert "A entrada deve ter pelo menos 20 caracteres" in final_state["final_answer"]
+    assert "## Como corrigir" in final_state["final_answer"]
+    assert "Como cliente autenticado, quero consultar meus pedidos recentes para acompanhar a entrega." in final_state["final_answer"]
+    assert "# Plano de Testes" not in final_state["final_answer"]
+
+
+def test_run_agent_does_not_call_llm_for_invalid_short_story(monkeypatch) -> None:
+    llm_calls = []
+
+    def fail_if_called(state, deterministic_answer):
+        llm_calls.append((state, deterministic_answer))
+        raise AssertionError("LLM não deve ser chamado para entrada inválida.")
+
+    monkeypatch.setenv("OPENAI_API_KEY", "chave-falsa-para-teste")
+    monkeypatch.setenv("OPENAI_MODEL", "modelo-falso")
+    monkeypatch.setattr("test_plan_agent.graph.generate_plan_with_llm", fail_if_called)
+
+    final_state = run_agent("curta")
+
+    assert llm_calls == []
+    assert final_state["generation_mode"] == "validation_failed"
+    assert final_state["fallback_used"] is False
 
 
 def test_run_agent_reports_incomplete_story_gaps() -> None:
     final_state = run_agent("A exportação de relatórios precisa ser liberada")
 
     assert final_state["provisional_response"]["status"] == "invalid"
+    assert final_state["generation_mode"] == "validation_failed"
+    assert final_state["fallback_used"] is False
     assert "A história deve indicar o ator ou perfil envolvido." in final_state["validation_errors"]
     assert "A história deve indicar o resultado esperado ou valor gerado." in final_state["validation_errors"]
-    assert "Lacuna: A história deve indicar o ator ou perfil envolvido." in final_state["final_answer"]
+    assert "A história deve indicar o ator ou perfil envolvido." in final_state["final_answer"]
+    assert "## Como corrigir" in final_state["final_answer"]
+    assert "# Plano de Testes" not in final_state["final_answer"]
+
+
+def test_run_agent_does_not_call_llm_for_story_missing_required_parts(monkeypatch) -> None:
+    llm_calls = []
+
+    def fail_if_called(state, deterministic_answer):
+        llm_calls.append((state, deterministic_answer))
+        raise AssertionError("LLM não deve ser chamado para entrada inválida.")
+
+    monkeypatch.setenv("OPENAI_API_KEY", "chave-falsa-para-teste")
+    monkeypatch.setenv("OPENAI_MODEL", "modelo-falso")
+    monkeypatch.setattr("test_plan_agent.graph.generate_plan_with_llm", fail_if_called)
+
+    final_state = run_agent("A exportação de relatórios precisa ser liberada")
+
+    assert llm_calls == []
+    assert final_state["generation_mode"] == "validation_failed"
+    assert final_state["fallback_used"] is False
+
+
+def test_run_agent_valid_ambiguous_story_still_uses_llm_when_configured(monkeypatch) -> None:
+    captured_messages = []
+
+    class FakeChatModel:
+        def invoke(self, messages):
+            captured_messages.extend(messages)
+            return type("FakeResponse", (), {"content": "# Plano de Testes\n\n## Riscos\nTermo ambíguo mantido."})()
+
+    monkeypatch.setenv("OPENAI_API_KEY", "chave-falsa-para-teste")
+    monkeypatch.setenv("OPENAI_MODEL", "modelo-falso")
+    monkeypatch.setattr("test_plan_agent.llm._build_chat_model", lambda config: FakeChatModel())
+
+    final_state = run_agent("Como cliente, quero uma busca rápida e intuitiva para encontrar pedidos.")
+
+    assert final_state["validation_errors"] == []
+    assert final_state["generation_mode"] == "llm"
+    assert final_state["fallback_used"] is False
+    assert "rápido" in final_state["story_analysis"]["ambiguous_terms"]
+    assert captured_messages
+
+
+def test_main_prints_invalid_markdown_to_stdout_and_progress_to_stderr(monkeypatch, capsys) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "chave-falsa-para-teste")
+    monkeypatch.setenv("OPENAI_MODEL", "modelo-falso")
+    monkeypatch.setattr("sys.argv", ["test-plan-agent", "curta"])
+
+    main()
+
+    captured = capsys.readouterr()
+    assert captured.out.startswith("# Entrada precisa de correção")
+    assert "## Como corrigir" in captured.out
+    assert "# Plano de Testes" not in captured.out
+    assert "[Test-Plan Agent] Processando história 1/1..." in captured.err
+    assert "[Test-Plan Agent] Entrada inválida; geração com LLM ignorada." in captured.err
 
 
 def test_run_agent_reports_ambiguous_terms() -> None:
