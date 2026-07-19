@@ -183,6 +183,6 @@ Histórias de usuário chegam com lacunas, ambiguidade e poucos critérios verif
 
 </div>
 <div class="diagram">
-	<img width="70%" src="assets/apresentacao-flow.svg" alt="Fluxo de execução do agente" />
+	<img width="50%" src="assets/apresentacao-flow.svg" alt="Fluxo de execução do agente" />
 </div>
 </div>

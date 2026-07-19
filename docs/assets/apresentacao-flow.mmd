@@ -1,7 +1,10 @@
 flowchart TD
     start(["Entrada"]) --> validate["Validar história"]
-    validate --> context["Preparar contexto local"]
-    context --> analyze["Analisar lacunas<br/>e ambiguidades"]
+    validate --> validation_result{"História tem<br/>lacunas?"}
+    validation_result -->|não| context["Preparar contexto local"]
+    validation_result -->|sim| gaps["Manter lacunas<br/>no estado"]
+    gaps --> context
+    context --> analyze["Analisar história<br/>com lacunas e ambiguidades"]
     analyze --> draft["Gerar rascunho<br/>critérios e cenários"]
     draft --> decision{"Configuração<br/>de LLM"}
     decision -->|ausente| fallback["Fallback determinístico"]
@@ -19,8 +22,8 @@ flowchart TD
     classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#172033
 
     class start startClass
-    class validate validationClass
+    class validate,validation_result validationClass
     class context contextClass
-    class analyze,draft,decision,llm,fallback graphClass
+    class gaps,analyze,draft,decision,llm,fallback graphClass
     class markdown,stderr outputClass
     class error errorClass

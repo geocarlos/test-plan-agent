@@ -75,10 +75,12 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    start_node((Início)) --> progress_start[stderr: Processando história N/M]
-    progress_start --> validate_input[validate_input]
-    validate_input --> prepare_context[prepare_context]
-    prepare_context --> analyze_story[analyze_story]
+    start_node((Início)) --> validate_input[validate_input]
+    validate_input --> validation_result{Lacunas de entrada?}
+    validation_result -->|não| prepare_context[prepare_context]
+    validation_result -->|sim| keep_gaps[Registrar lacunas no estado<br/>status final invalid]
+    keep_gaps --> prepare_context
+    prepare_context --> analyze_story[analyze_story<br/>inclui lacunas e ambiguidades]
     analyze_story --> acceptance[generate_acceptance_criteria]
     acceptance --> scenarios[generate_test_scenarios]
     scenarios --> edge_cases[generate_edge_cases]
@@ -104,10 +106,10 @@ flowchart TD
     classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#450a0a
 
     class start_node,finish_node boundaryClass
-    class validate_input validationClass
+    class validate_input,validation_result validationClass
     class prepare_context contextClass
-    class analyze_story,acceptance,scenarios,edge_cases,example_data,risks,automation,llm_config,llm_request generationClass
-    class final_answer,progress_start,deterministic_fallback,stdout_markdown,stderr_message finalClass
+    class keep_gaps,analyze_story,acceptance,scenarios,edge_cases,example_data,risks,automation,llm_config,llm_request generationClass
+    class final_answer,deterministic_fallback,stdout_markdown,stderr_message finalClass
     class llm_error errorClass
 ```
 
