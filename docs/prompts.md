@@ -378,3 +378,79 @@ Ao final, informe os arquivos alterados, os comandos executados, o resultado dos
 ### Status
 
 - Concluído e validado com `uv run pytest` e `uv run test-plan-agent`.
+
+## Prompt 6: CI/GitHub Actions
+
+### Objetivo
+
+Criar um workflow de GitHub Actions para validar automaticamente o projeto com `uv`, executando instalação de dependências, testes e uma execução básica do CLI em pull requests e pushes relevantes.
+
+### Branch sugerido
+
+```text
+ci/add-github-actions-workflow
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O projeto Python usa uv.
+- O agente com LangGraph já gera planos de teste em Markdown.
+- A ferramenta de leitura controlada da base local já existe.
+- A suíte de testes foi ampliada.
+- Existem exemplos versionados de entrada e saída.
+- O comando `uv run pytest` passa localmente.
+- O comando `uv run test-plan-agent` executa localmente.
+
+Objetivo do projeto:
+Construir um agente com LangGraph que receba histórias de usuário, issues ou requisitos funcionais e gere planos de teste verificáveis com critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda, dados de exemplo, riscos de ambiguidade e sugestões de automação.
+
+Nesta etapa, crie apenas a configuração de CI com GitHub Actions.
+
+Branch sugerido para esta etapa:
+ci/add-github-actions-workflow
+
+Regras do projeto:
+- Faça somente o que for pedido nesta etapa.
+- Use documentação em português com acentuação correta conforme a ortografia padrão do Brasil.
+- Preserve as instruções do projeto em .github/copilot-instructions.md, .github/instructions/project-memory.instructions.md e CLAUDE.md.
+- Não altere a lógica do agente, salvo se a configuração de CI revelar um problema mínimo e necessário.
+- Não adicione serviços externos, banco de dados, secrets ou tokens.
+- Não exponha credenciais ou valores sensíveis.
+
+Tarefas esperadas:
+1. Criar `.github/workflows/ci.yml`.
+2. Configurar o workflow para rodar em pull requests para `develop` e `main`.
+3. Configurar o workflow para rodar em pushes para `develop` e `main`.
+4. Usar uma versão fixa ou controlada de Python compatível com `pyproject.toml`.
+5. Instalar ou configurar `uv` no workflow usando uma action adequada e conhecida.
+6. Executar `uv sync`.
+7. Executar `uv run pytest`.
+8. Executar uma validação simples do CLI, por exemplo `uv run test-plan-agent`.
+9. Se fizer sentido, executar o CLI com uma história curta de exemplo para garantir que a saída final em Markdown é gerada sem erro.
+10. Atualizar o README.md apenas se for útil documentar o status ou comando de CI.
+11. Validar localmente a sintaxe YAML sempre que possível e explicar qualquer limitação de validação local.
+
+Resultado esperado:
+- Workflow `.github/workflows/ci.yml` criado.
+- CI validando instalação, testes e execução básica do agente.
+- Nenhuma dependência desnecessária adicionada.
+- Nenhum secret ou token exigido.
+- Projeto pronto para usar checks automáticos em PRs.
+
+Ao final, informe os arquivos alterados, os comandos executados, as validações feitas e qualquer limitação encontrada por não ser possível executar GitHub Actions localmente.
+```
+
+### Resultado esperado
+
+- Workflow de CI criado em `.github/workflows/ci.yml`.
+- CI executando `uv sync`, `uv run pytest` e validação básica do CLI.
+- Workflow acionado em pull requests e pushes para `develop` e `main`.
+- Projeto preparado para checks automáticos no GitHub.
+
+### Status
+
+- Planejado.
