@@ -1,23 +1,190 @@
-# Apresentação do Test-Plan Agent
+---
+marp: true
+theme: default
+paginate: true
+size: 16:9
+---
 
-## Slide 1: Problema e proposta
+<style>
+section {
+	--ink: #172033;
+	--muted: #5f6b7a;
+	--brand: #2457d6;
+	--brand-2: #00a884;
+	--warn: #f59e0b;
+	--paper: #f8fafc;
+	--line: #d7deea;
+	background: linear-gradient(135deg, #f8fafc 0%, #edf4ff 48%, #f3fbf6 100%);
+	color: var(--ink);
+	font-family: "Aptos", "Segoe UI", sans-serif;
+	padding: 44px 56px;
+}
 
-**Problema:** histórias de usuário podem chegar ao time com lacunas, termos ambíguos e critérios de aceite pouco verificáveis, dificultando o planejamento de testes.
+h1 {
+	color: var(--brand);
+	font-size: 44px;
+	margin: 0 0 10px;
+}
 
-**Proposta:** criar um agente com LangGraph que recebe uma história de usuário e gera um plano de testes estruturado em Markdown.
+h2 {
+	color: var(--ink);
+	font-size: 25px;
+	margin: 0 0 18px;
+}
 
-**Entrada:** história de usuário, issue ou requisito funcional em texto.
+p,
+li {
+	font-size: 21px;
+	line-height: 1.35;
+}
 
-**Saída:** critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda, dados de exemplo, riscos de ambiguidade e sugestões de automação.
+strong {
+	color: var(--brand);
+}
+
+.eyebrow {
+	color: var(--brand-2);
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+
+.layout {
+	align-items: center;
+	display: grid;
+	gap: 34px;
+	grid-template-columns: .9fr 1.1fr;
+}
+
+.layout.compact {
+	gap: 28px;
+	grid-template-columns: .78fr 1.22fr;
+}
+
+.panel {
+	background: rgba(255, 255, 255, .78);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	box-shadow: 0 18px 45px rgba(36, 87, 214, .12);
+	padding: 24px;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 18px;
+}
+
+.chip {
+	background: #fff;
+	border: 1px solid var(--line);
+	border-left: 5px solid var(--brand-2);
+	border-radius: 999px;
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: 700;
+	padding: 8px 13px;
+}
+
+.metrics {
+	display: grid;
+	gap: 9px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	margin-top: 16px;
+}
+
+.metric {
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 10px 12px;
+}
+
+.metric b {
+	color: var(--brand);
+	display: block;
+	font-size: 21px;
+}
+
+.metric span {
+	color: var(--muted);
+	font-size: 13px;
+}
+
+.diagram {
+	background: rgba(255, 255, 255, .82);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 18px;
+}
+
+.layout.compact .diagram {
+	border-radius: 12px;
+	padding: 12px;
+}
+
+.diagram img {
+	display: block;
+	height: auto;
+}
+
+footer {
+	color: var(--muted);
+	font-size: 14px;
+}
+</style>
+
+<div class="layout">
+<div>
+
+<div class="eyebrow">Mini-projeto avaliativo</div>
+
+# Test-Plan Agent
+
+## De histórias de usuário para planos de teste verificáveis
+
+Agente com LangGraph que identifica lacunas, usa contexto local controlado e gera critérios, cenários, riscos e sugestões de automação em Markdown.
+
+<div class="chips">
+	<span class="chip">LangGraph</span>
+	<span class="chip">LLM opcional</span>
+	<span class="chip">Fallback explícito</span>
+	<span class="chip">Saída Markdown</span>
+</div>
+
+</div>
+<div class="diagram">
+	<img width="100%" src="assets/apresentacao-overview.svg" alt="Visão geral do Test-Plan Agent" />
+</div>
+</div>
 
 ---
 
-## Slide 2: Fluxo e implementação
+<div class="layout compact">
+<div>
 
-**Fluxo do agente:** validação da entrada -> leitura controlada da base local -> análise da história -> geração de critérios e cenários -> identificação de riscos -> formatação final em Markdown.
+<div class="eyebrow">Fluxo e evidências</div>
 
-**Tecnologias:** Python, uv, LangGraph, pytest e GitHub Actions.
+# Implementação demonstrável
 
-**Ferramenta integrada:** leitura controlada de `data/test_templates.md`, restrita à pasta `data/`, com extensões permitidas e limite de tamanho.
+## O grafo mantém estado, usa ferramenta local e valida a geração
 
-**Cuidados de entrega:** sem chaves ou tokens versionados, exemplos de entrada e saída no repositório, prompts registrados em `docs/prompts.md`, testes automatizados e CI em pull requests e pushes para `develop` e `main`.
+<div class="metrics">
+	<div class="metric"><b>34</b><span>testes automatizados</span></div>
+	<div class="metric"><b>CI</b><span>GitHub Actions em PR e push</span></div>
+	<div class="metric"><b>data/</b><span>leitura restrita e validada</span></div>
+	<div class="metric"><b>docs/</b><span>prompts e apresentação versionados</span></div>
+</div>
+
+<div class="chips">
+	<span class="chip">Entrada por argumento ou Markdown</span>
+	<span class="chip">Várias histórias por separador Markdown</span>
+</div>
+
+</div>
+<div class="diagram">
+	<img width="70%" src="assets/apresentacao-flow.svg" alt="Fluxo de execução do agente" />
+</div>
+</div>
