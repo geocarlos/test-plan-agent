@@ -45,7 +45,9 @@ flowchart LR
     cli --> progress[Progresso em stderr<br/>sem poluir o Markdown]
     cli --> graph_state[LangGraph StateGraph<br/>estado como memória]
     graph_state --> validate[Validação<br/>conteúdo, ator, ação e valor]
-    validate --> context[Ferramenta local<br/>data/test_templates.md]
+    validate --> validation_gate{Entrada válida?}
+    validation_gate -->|não| correction[Resposta de correção<br/>sem LLM]
+    validation_gate -->|sim| context[Ferramenta local<br/>data/test_templates.md]
     context --> deterministic[Análise e rascunho determinístico<br/>critérios, cenários e riscos]
     deterministic --> llm{Configuração de LLM?}
     llm -->|ausente| fallback[Fallback determinístico<br/>com aviso explícito]
@@ -53,6 +55,7 @@ flowchart LR
     llm -->|inválida ou recusada| controlled_error[Erro controlado<br/>sem fallback silencioso]
     fallback --> output[stdout<br/>Markdown final]
     plan --> output
+    correction --> output
     controlled_error --> stderr_error[stderr<br/>mensagem explícita]
 
     classDef inputClass fill:#dbeafe,stroke:#1d4ed8,color:#172554
@@ -63,10 +66,10 @@ flowchart LR
     classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#450a0a
 
     class user_input,cli inputClass
-    class validate validationClass
+    class validate,validation_gate validationClass
     class context toolClass
     class graph_state,deterministic,llm graphClass
-    class plan,output,progress,stderr_error outputClass
+    class correction,plan,output,progress,stderr_error outputClass
     class fallback validationClass
     class controlled_error errorClass
 ```
@@ -76,11 +79,11 @@ flowchart LR
 ```mermaid
 flowchart TD
     start_node((Início)) --> validate_input[validate_input]
-    validate_input --> validation_result{Lacunas de entrada?}
-    validation_result -->|não| prepare_context[prepare_context]
-    validation_result -->|sim| keep_gaps[Registrar lacunas no estado<br/>status final invalid]
-    keep_gaps --> prepare_context
-    prepare_context --> analyze_story[analyze_story<br/>inclui lacunas e ambiguidades]
+    validate_input --> validation_result{Entrada válida?}
+    validation_result -->|não| invalid_answer[format_final_answer<br/>resposta de correção]
+    invalid_answer --> invalid_stdout[stdout: Markdown com lacunas<br/>e orientação de correção]
+    validation_result -->|sim| prepare_context[prepare_context]
+    prepare_context --> analyze_story[analyze_story<br/>detecta ambiguidades não bloqueantes]
     analyze_story --> acceptance[generate_acceptance_criteria]
     acceptance --> scenarios[generate_test_scenarios]
     scenarios --> edge_cases[generate_edge_cases]
@@ -95,6 +98,7 @@ flowchart TD
     deterministic_fallback --> stdout_markdown[stdout: Markdown final]
     llm_request --> stdout_markdown
     llm_error --> stderr_message[stderr: mensagem explícita]
+    invalid_stdout --> finish_node
     stdout_markdown --> finish_node((Fim))
     stderr_message --> finish_node
 
@@ -108,25 +112,26 @@ flowchart TD
     class start_node,finish_node boundaryClass
     class validate_input,validation_result validationClass
     class prepare_context contextClass
-    class keep_gaps,analyze_story,acceptance,scenarios,edge_cases,example_data,risks,automation,llm_config,llm_request generationClass
-    class final_answer,deterministic_fallback,stdout_markdown,stderr_message finalClass
+    class analyze_story,acceptance,scenarios,edge_cases,example_data,risks,automation,llm_config,llm_request generationClass
+    class invalid_answer,invalid_stdout,final_answer,deterministic_fallback,stdout_markdown,stderr_message finalClass
     class llm_error errorClass
 ```
 
 Fluxo principal:
 
 1. validar a história de usuário;
-2. preparar contexto local a partir da base de templates;
-3. analisar a história e detectar lacunas ou termos ambíguos;
-4. gerar critérios de aceite;
-5. gerar cenários principais, alternativos e negativos;
-6. sugerir casos de borda e dados de exemplo;
-7. identificar riscos de ambiguidade;
-8. sugerir automação;
-9. emitir progresso em `stderr` durante a execução sem alterar a saída Markdown;
-10. gerar a resposta final com LLM quando houver configuração válida;
-11. usar fallback determinístico com aviso explícito quando não houver configuração de LLM;
-12. falhar com erro controlado, sem fallback silencioso, quando a configuração de LLM existir mas estiver inválida ou for recusada.
+2. se a entrada tiver lacunas bloqueantes, retornar uma resposta de correção sem chamar LLM;
+3. se a entrada for válida, preparar contexto local a partir da base de templates;
+4. analisar a história e detectar termos ambíguos não bloqueantes;
+5. gerar critérios de aceite;
+6. gerar cenários principais, alternativos e negativos;
+7. sugerir casos de borda e dados de exemplo;
+8. identificar riscos de ambiguidade;
+9. sugerir automação;
+10. emitir progresso em `stderr` durante a execução sem alterar a saída Markdown;
+11. gerar a resposta final com LLM quando houver configuração válida;
+12. usar fallback determinístico com aviso explícito quando não houver configuração de LLM;
+13. falhar com erro controlado, sem fallback silencioso, quando a configuração de LLM existir mas estiver inválida ou for recusada.
 
 ## Planejamento
 

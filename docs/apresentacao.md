@@ -170,9 +170,9 @@ Histórias de usuário chegam com lacunas, ambiguidade e poucos critérios verif
 ## Fluxo com LangGraph, contexto local e geração final
 
 <div class="summary-list">
-	<div><strong>Processo automatizado</strong>Validar a história, buscar contexto, identificar lacunas e montar o plano de testes.</div>
+	<div><strong>Processo automatizado</strong>Validar a história; se houver lacuna bloqueante, orientar correção; se estiver válida, montar o plano de testes.</div>
 	<div><strong>Ferramenta</strong>Leitura controlada de <code>data/test_templates.md</code>, restrita à pasta <code>data/</code>.</div>
-	<div><strong>Geração</strong>Usa LLM quando configurado; sem configuração, usa fallback determinístico explícito.</div>
+	<div><strong>Geração</strong>Para entradas válidas, usa LLM quando configurado; sem configuração, usa fallback determinístico explícito.</div>
 </div>
 
 <div class="chips">
@@ -183,6 +183,6 @@ Histórias de usuário chegam com lacunas, ambiguidade e poucos critérios verif
 
 </div>
 <div class="diagram">
-	<img width="50%" src="assets/apresentacao-flow.svg" alt="Fluxo de execução do agente" />
+	<img width="75%" src="assets/apresentacao-flow.svg" alt="Fluxo de execução do agente" />
 </div>
 </div>

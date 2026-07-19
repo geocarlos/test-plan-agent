@@ -1,16 +1,16 @@
 flowchart LR
     input["História de usuário<br/>CLI ou Markdown"] --> cli["CLI<br/>1 ou várias histórias"]
     cli --> state_graph["LangGraph<br/>StateGraph"]
-    state_graph --> validation{"Validação<br/>encontrou lacunas?"}
-    validation -->|não| context["Ferramenta local<br/>data/test_templates.md"]
-    validation -->|sim| gaps["Lacunas registradas<br/>no estado"]
-    gaps --> context
+    state_graph --> validation{"Entrada válida?"}
+    validation -->|não| correction["Resposta de correção<br/>sem LLM"]
+    validation -->|sim| context["Ferramenta local<br/>data/test_templates.md"]
     context --> generation{"LLM configurado?"}
     generation -->|sim| llm["Plano com LLM"]
     generation -->|não| fallback["Fallback determinístico<br/>com aviso"]
     generation -->|inválido| error["Erro controlado"]
     llm --> output["Markdown final"]
     fallback --> output
+    correction --> output
 
     classDef inputClass fill:#dbeafe,stroke:#2457d6,color:#172033
     classDef validationClass fill:#fef3c7,stroke:#f59e0b,color:#172033
@@ -21,7 +21,7 @@ flowchart LR
 
     class input,cli inputClass
     class state_graph,generation graphClass
-    class validation,gaps validationClass
+    class validation validationClass
     class context toolClass
-    class llm,fallback,output outputClass
+    class correction,llm,fallback,output outputClass
     class error errorClass
