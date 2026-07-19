@@ -2,7 +2,7 @@
 
 Agente de IA para planejar testes manuais e automatizados a partir de histórias de usuário.
 
-Este repositório será desenvolvido como mini-projeto do curso **IA para Desenvolvedores** do **SCTEC**.
+_Repositório desenvolvido como mini-projeto do Módulo 2 do curso **IA para Desenvolvedores** do **SCTEC**_.
 
 ## Objetivo inicial
 
@@ -242,6 +242,14 @@ Também é possível executar o módulo diretamente:
 
 ```bash
 uv run python -m test_plan_agent.cli
+```
+
+O output é entregue no terminal. Para gerar um arquivo, é necessário redirecioná-lo.
+
+Exemplo:
+
+```bash
+uv run test-plan-agent --file examples/input/historia-valida.md > output.md
 ```
 
 Durante a execução, o CLI escreve mensagens de progresso em `stderr`. A resposta final em Markdown permanece em `stdout`, então redirecionamentos como `> output.md` continuam salvando apenas o plano gerado.
