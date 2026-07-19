@@ -1,7 +1,9 @@
 flowchart TD
     start(["Entrada"]) --> validate["Validar história"]
-    validate --> context["Preparar contexto local"]
-    context --> analyze["Analisar lacunas<br/>e ambiguidades"]
+    validate --> validation_result{"Entrada válida?"}
+    validation_result -->|não| correction["Responder com lacunas<br/>e orientação"]
+    validation_result -->|sim| context["Preparar contexto local"]
+    context --> analyze["Analisar história<br/>e ambiguidades"]
     analyze --> draft["Gerar rascunho<br/>critérios e cenários"]
     draft --> decision{"Configuração<br/>de LLM"}
     decision -->|ausente| fallback["Fallback determinístico"]
@@ -9,6 +11,7 @@ flowchart TD
     decision -->|inválida| error["Falhar sem<br/>mascarar erro"]
     fallback --> markdown["Markdown em stdout"]
     llm --> markdown
+    correction --> markdown
     error --> stderr["Mensagem em stderr"]
 
     classDef startClass fill:#dbeafe,stroke:#2457d6,color:#172033
@@ -19,8 +22,8 @@ flowchart TD
     classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#172033
 
     class start startClass
-    class validate validationClass
+    class validate,validation_result validationClass
     class context contextClass
     class analyze,draft,decision,llm,fallback graphClass
-    class markdown,stderr outputClass
+    class correction,markdown,stderr outputClass
     class error errorClass
