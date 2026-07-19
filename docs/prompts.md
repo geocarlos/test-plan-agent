@@ -578,3 +578,92 @@ Ao final, informe os arquivos alterados, comandos executados, resultado dos test
 ### Status
 
 - Concluído e validado com `uv run pytest` e execução do comando original com redirecionamento para `output.md`.
+
+## Prompt 8: Suporte a LLM com fallback determinístico
+
+### Objetivo
+
+Evoluir o agente para usar um LLM como caminho principal de geração do plano de testes, mantendo a geração determinística atual apenas como fallback explícito quando nenhuma configuração de LLM estiver disponível.
+
+### Branch sugerido
+
+```text
+feature/add-llm-support
+```
+
+### Prompt
+
+```text
+Estamos no repositório test-plan-agent, um mini-projeto avaliativo do curso IA para Desenvolvedores.
+
+Contexto já concluído:
+- O projeto Python usa uv.
+- O agente com LangGraph já gera planos de teste em Markdown.
+- A geração atual é determinística e foi adequada para a construção inicial do agente.
+- O CLI aceita entrada textual e entrada por arquivo Markdown usando `--file`.
+- Arquivos Markdown podem conter uma ou mais user stories separadas por `---`.
+- A ferramenta de leitura controlada da base local já existe.
+- A suíte de testes, exemplos versionados, documentação e CI já existem.
+
+Objetivo desta etapa:
+Adicionar suporte real a LLM como caminho principal de geração do plano de testes, mantendo a geração determinística atual apenas como fallback quando nenhuma configuração de LLM estiver disponível no ambiente.
+
+Branch sugerido para esta etapa:
+feature/add-llm-support
+
+Regras do projeto:
+- Faça somente o que for pedido nesta etapa.
+- Use documentação em português com acentuação correta conforme a ortografia padrão do Brasil.
+- Preserve as instruções do projeto em .github/copilot-instructions.md, .github/instructions/project-memory.instructions.md e CLAUDE.md.
+- O agente deve usar LLM quando houver configuração válida disponível nas variáveis de ambiente.
+- A geração determinística atual deve permanecer como fallback, mas não deve ser o caminho principal quando houver LLM configurado.
+- O usuário deve ser informado claramente quando o fallback determinístico for usado, pois isso pode indicar ausência acidental de configuração.
+- O fallback só pode ser usado quando nenhuma configuração de LLM estiver disponível.
+- O fallback não deve ser usado quando variáveis de ambiente de LLM estiverem setadas, mas forem inválidas, recusadas ou resultarem em erro de autenticação/autorização.
+- Em caso de chave inválida, credencial recusada, modelo inexistente, erro de permissão ou erro equivalente do provedor, o agente deve falhar com mensagem controlada e explícita, sem mascarar o problema com o fallback.
+- Não exponha chaves, tokens, secrets ou valores sensíveis em logs, mensagens de erro, README, testes ou exemplos.
+- Mantenha a base local `data/test_templates.md` como contexto de apoio para a geração com LLM.
+- Preserve a compatibilidade com execução local sem LLM configurado, usando fallback determinístico informado ao usuário.
+
+Tarefas esperadas:
+1. Analisar a arquitetura atual do agente, especialmente `graph.py`, `prompts.py`, `state.py`, `tools.py` e `cli.py`.
+2. Escolher uma integração de LLM compatível com LangGraph e com configuração por variáveis de ambiente, preferindo uma abordagem simples e segura.
+3. Adicionar as dependências necessárias para chamada de LLM, sem incluir provedores ou bibliotecas desnecessárias.
+4. Definir variáveis de ambiente esperadas no `.env.example`, sem valores reais.
+5. Implementar detecção explícita de configuração de LLM disponível no ambiente.
+6. Implementar um caminho principal de geração com LLM usando a história de usuário, os prompts internos e o contexto local de `data/test_templates.md`.
+7. Preservar a geração determinística atual como fallback reutilizável quando nenhuma configuração de LLM estiver disponível.
+8. Informar claramente na saída final ou em metadados do estado quando o fallback determinístico for usado.
+9. Garantir que o fallback não seja acionado quando houver variáveis de ambiente de LLM setadas, mas inválidas.
+10. Tratar erros de autenticação, autorização, modelo inválido, credencial recusada e configuração incorreta com mensagens controladas e sem vazamento de secrets.
+11. Atualizar testes para cobrir geração com fallback por ausência de configuração, aviso de fallback, tentativa de uso de LLM quando configuração existe e erro controlado quando credenciais configuradas forem inválidas.
+12. Usar mocks ou fakes nos testes para evitar chamadas reais ao provedor de LLM.
+13. Atualizar o README.md documentando como configurar o LLM, quais variáveis de ambiente são esperadas, como funciona o fallback e em quais situações o fallback não será usado.
+14. Atualizar exemplos ou documentação somente quando isso melhorar a demonstração do novo comportamento.
+15. Validar tudo com comandos reais usando uv.
+
+Resultado esperado:
+- O agente usa LLM como caminho principal quando houver configuração válida no ambiente.
+- A geração determinística atual permanece disponível apenas como fallback por ausência total de configuração de LLM.
+- O usuário é informado quando o fallback determinístico for usado.
+- Credenciais inválidas ou recusadas geram erro controlado, sem uso silencioso do fallback.
+- A base local de templates continua sendo usada como contexto de apoio.
+- Testes cobrem os caminhos com LLM mockado, fallback por ausência de configuração e erro por configuração inválida.
+- `.env.example` e README documentam a configuração necessária sem expor secrets.
+- `uv run pytest` passando.
+
+Ao final, informe os arquivos alterados, comandos executados, resultado dos testes, limitações encontradas e como validar manualmente o uso real com LLM sem compartilhar credenciais.
+```
+
+### Resultado esperado
+
+- Integração com LLM implementada como caminho principal de geração do plano de testes.
+- Fallback determinístico mantido apenas para ausência total de configuração de LLM.
+- Aviso explícito ao usuário quando o fallback for usado.
+- Erros de credenciais inválidas tratados sem fallback silencioso.
+- Testes com mocks cobrindo os principais caminhos de execução.
+- README e `.env.example` atualizados com configuração segura.
+
+### Status
+
+- Pendente.
