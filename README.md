@@ -12,7 +12,7 @@ Construir um agente com LangGraph capaz de receber uma história de usuário, an
 
 Histórias de usuário costumam chegar ao time de desenvolvimento com lacunas, termos ambíguos e pouca clareza sobre critérios de aceite. Isso dificulta a criação de testes manuais e automatizados consistentes.
 
-O Test-Plan Agent automatiza uma primeira análise de testabilidade: ele recebe uma história de usuário, identifica lacunas básicas, consulta uma base local de templates e devolve um plano de testes em Markdown. Quando houver configuração válida de LLM no ambiente, a geração final usa o modelo configurado; sem essa configuração, o agente usa fallback determinístico e informa isso na saída.
+O Test-Plan Agent automatiza uma primeira análise de testabilidade: ele recebe uma história de usuário, identifica lacunas básicas, consulta uma base local de templates e devolve um plano de testes em Markdown. Entradas com lacunas bloqueantes, como ausência de ator, objetivo ou resultado esperado, retornam uma orientação de correção sem chamar LLM nem gerar plano completo. Quando a história é válida e houver configuração válida de LLM no ambiente, a geração final usa o modelo configurado; sem essa configuração, o agente usa fallback determinístico e informa isso na saída.
 
 ## Entrada e saída
 
@@ -159,6 +159,8 @@ Não versione chaves, tokens ou valores reais. Mantenha credenciais apenas em `.
 Quando nenhuma variável de LLM estiver configurada, o agente preserva a compatibilidade local e gera o plano pelo caminho determinístico. Nesse caso, a saída final começa com um aviso informando que o fallback foi usado.
 
 O fallback não é usado quando alguma configuração de LLM estiver presente, mas incompleta, inválida ou recusada pelo provedor. Casos como `OPENAI_MODEL` definido sem `OPENAI_API_KEY`, chave inválida, erro de autenticação, erro de autorização, modelo inexistente ou permissão insuficiente geram erro controlado e explícito, sem mascarar o problema.
+
+Entradas bloqueantes inválidas também não usam fallback determinístico nem LLM. Nesses casos, o agente retorna uma resposta curta em Markdown com as lacunas detectadas e exemplos para reescrever a história antes da geração definitiva. Ambiguidades em histórias estruturalmente válidas, como termos subjetivos sem métrica, seguem para geração e aparecem como riscos no plano.
 
 ## Decisões principais
 
