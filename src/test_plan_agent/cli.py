@@ -4,6 +4,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "langgraph>=0.6.0",
+#     "langchain-openai>=0.3.0",
 #     "python-dotenv>=1.0.1",
 # ]
 # ///
@@ -17,6 +18,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from test_plan_agent.graph import run_agent
+from test_plan_agent.llm import LLMError
 
 
 DEFAULT_USER_STORY = (
@@ -133,21 +135,36 @@ def _configure_stdout_encoding() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
 
 
+def _configure_stderr_encoding() -> None:
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+
+
+def _print_progress(message: str) -> None:
+    print(f"[Test-Plan Agent] {message}", file=sys.stderr, flush=True)
+
+
 def main() -> None:
     """Executa o agente e imprime o plano final em Markdown."""
     _configure_stdout_encoding()
+    _configure_stderr_encoding()
     args = parse_args()
     user_stories = resolve_user_stories(args)
 
-    if len(user_stories) == 1:
-        final_state = run_agent(user_stories[0])
-        print(final_state["final_answer"])
-        return
+    try:
+        if len(user_stories) == 1:
+            _print_progress("Processando história 1/1...")
+            final_state = run_agent(user_stories[0], progress_callback=_print_progress)
+            print(final_state["final_answer"])
+            return
 
-    final_answers: list[str] = ["# Planos de Testes"]
-    for index, user_story in enumerate(user_stories, start=1):
-        final_state = run_agent(user_story)
-        final_answers.append(f"## História {index}\n\n" + final_state["final_answer"])
+        final_answers: list[str] = ["# Planos de Testes"]
+        for index, user_story in enumerate(user_stories, start=1):
+            _print_progress(f"Processando história {index}/{len(user_stories)}...")
+            final_state = run_agent(user_story, progress_callback=_print_progress)
+            final_answers.append(f"## História {index}\n\n" + final_state["final_answer"])
+    except LLMError as error:
+        raise SystemExit(str(error)) from error
 
     print("\n\n---\n\n".join(final_answers))
 
