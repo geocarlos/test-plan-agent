@@ -738,4 +738,4 @@ Ao final, informe arquivos alterados, comandos executados, resultado dos testes 
 
 ### Status
 
-- Prompt registrado para execução em sessão dedicada.
+- Concluído e validado com `uv run pytest`, execução do CLI com entrada inválida e variáveis de LLM configuradas, e execução do CLI com história válida usando fallback determinístico.

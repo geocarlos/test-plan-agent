@@ -9,7 +9,7 @@ from test_plan_agent.prompts import (
     PLAN_GENERATION_SYSTEM_PROMPT,
     SCENARIO_GENERATION_PROMPT,
 )
-from test_plan_agent.state import AgentState
+from test_plan_agent.state import AgentState, create_initial_state
 from test_plan_agent.tools import prepare_minimal_context
 from test_plan_agent.validators import detect_ambiguous_terms, validate_user_story
 
@@ -24,6 +24,14 @@ def validate_input(state: AgentState) -> AgentState:
     """Nó responsável por validar a entrada principal."""
     _report_progress(state, "Validando entrada...")
     return {"validation_errors": validate_user_story(state.get("user_story", ""))}
+
+
+def route_after_validation(state: AgentState) -> str:
+    """Define se a história pode seguir para geração do plano."""
+    if state.get("validation_errors"):
+        return "format_final_answer"
+
+    return "prepare_context"
 
 
 def prepare_context(state: AgentState) -> AgentState:
@@ -211,9 +219,47 @@ def _build_deterministic_final_answer(state: AgentState) -> str:
     )
 
 
+def _build_invalid_input_answer(state: AgentState) -> str:
+    user_story = " ".join(state.get("user_story", "").strip().split())
+    validation_errors = state.get("validation_errors", [])
+
+    return "\n\n".join(
+        [
+            "# Entrada precisa de correção",
+            "A entrada informada ainda não tem informações suficientes para gerar um plano de testes confiável.",
+            "## Entrada recebida\n" + (user_story or "Nenhuma entrada informada."),
+            "## Lacunas detectadas\n" + _format_list(validation_errors),
+            "## Como corrigir\n"
+            + _format_list(
+                [
+                    "Informe o ator ou perfil envolvido, por exemplo: Como cliente autenticado.",
+                    "Descreva o objetivo ou ação esperada, por exemplo: quero consultar meus pedidos recentes.",
+                    "Explique o valor ou resultado esperado, por exemplo: para acompanhar a entrega.",
+                ]
+            ),
+            "## Exemplo de reescrita\nComo cliente autenticado, quero consultar meus pedidos recentes para acompanhar a entrega.",
+        ]
+    )
+
+
 def format_final_answer(state: AgentState) -> AgentState:
     """Nó responsável por formatar a resposta final em Markdown."""
     _report_progress(state, "Montando resposta final...")
+    if state.get("validation_errors"):
+        _report_progress(state, "Entrada inválida; geração com LLM ignorada.")
+        return {
+            "final_answer": _build_invalid_input_answer(state),
+            "generation_mode": "validation_failed",
+            "fallback_used": False,
+            "provisional_response": {
+                **state.get("provisional_response", {}),
+                "status": "invalid",
+                "generation_mode": "validation_failed",
+                "fallback_used": False,
+                "message": "Entrada inválida; corrija as lacunas antes da geração do plano.",
+            },
+        }
+
     deterministic_answer = _build_deterministic_final_answer(state)
     provisional_response = {
         **state.get("provisional_response", {}),
@@ -275,7 +321,14 @@ def build_graph():
     graph_builder.add_node("format_final_answer", format_final_answer)
 
     graph_builder.add_edge(START, "validate_input")
-    graph_builder.add_edge("validate_input", "prepare_context")
+    graph_builder.add_conditional_edges(
+        "validate_input",
+        route_after_validation,
+        {
+            "prepare_context": "prepare_context",
+            "format_final_answer": "format_final_answer",
+        },
+    )
     graph_builder.add_edge("prepare_context", "analyze_story")
     graph_builder.add_edge("analyze_story", "generate_acceptance_criteria")
     graph_builder.add_edge("generate_acceptance_criteria", "generate_test_scenarios")
@@ -292,7 +345,7 @@ def build_graph():
 def run_agent(user_story: str, progress_callback=None) -> AgentState:
     """Executa o grafo a partir de uma história de usuário."""
     graph = build_graph()
-    initial_state: AgentState = {"user_story": user_story}
+    initial_state = create_initial_state(user_story)
     if progress_callback is not None:
         initial_state["_progress_callback"] = progress_callback
 
