@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validar projeto
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configurar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.8.15"
+          enable-cache: true
+
+      - name: Instalar dependências
+        run: uv sync --locked
+
+      - name: Executar testes
+        run: uv run pytest
+
+      - name: Validar CLI com história padrão
+        run: uv run test-plan-agent
+
+      - name: Validar CLI com história curta
+        run: |
+          uv run test-plan-agent "Como cliente, quero consultar pedidos recentes para acompanhar a entrega." > plano-ci.md
+          test -s plano-ci.md
