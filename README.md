@@ -12,7 +12,7 @@ Construir um agente com LangGraph capaz de receber uma história de usuário, an
 
 Histórias de usuário costumam chegar ao time de desenvolvimento com lacunas, termos ambíguos e pouca clareza sobre critérios de aceite. Isso dificulta a criação de testes manuais e automatizados consistentes.
 
-O Test-Plan Agent automatiza uma primeira análise de testabilidade: ele recebe uma história de usuário, identifica lacunas básicas, consulta uma base local de templates e devolve um plano de testes em Markdown.
+O Test-Plan Agent automatiza uma primeira análise de testabilidade: ele recebe uma história de usuário, identifica lacunas básicas, consulta uma base local de templates e devolve um plano de testes em Markdown. Quando houver configuração válida de LLM no ambiente, a geração final usa o modelo configurado; sem essa configuração, o agente usa fallback determinístico e informa isso na saída.
 
 ## Entrada e saída
 
@@ -35,7 +35,7 @@ Saída produzida:
 
 ## Funcionamento do agente
 
-O agente usa um `StateGraph` do LangGraph para organizar o fluxo em etapas sequenciais. O estado compartilhado funciona como memória de execução e acumula validações, contexto local, análise da história, critérios, cenários, dados de exemplo, riscos, sugestões de automação e resposta final.
+O agente usa um `StateGraph` do LangGraph para organizar o fluxo em etapas sequenciais. O estado compartilhado funciona como memória de execução e acumula validações, contexto local, análise da história, critérios, cenários, dados de exemplo, riscos, sugestões de automação, metadados de geração e resposta final.
 
 ### Visualização geral
 
@@ -44,7 +44,10 @@ flowchart LR
     user_input[Entrada do usuário<br/>CLI ou arquivo Markdown] --> validate[Validação<br/>conteúdo, ator, ação e valor]
     validate --> context[Ferramenta local<br/>data/test_templates.md]
     context --> graph_state[LangGraph StateGraph<br/>estado como memória]
-    graph_state --> plan[Plano de testes<br/>Markdown estruturado]
+    graph_state --> llm{LLM configurado?}
+    llm -->|sim| plan[Plano de testes<br/>gerado com LLM]
+    llm -->|não| fallback[Fallback determinístico<br/>com aviso explícito]
+    fallback --> output[Saída reproduzível<br/>critérios, cenários e riscos]
     plan --> output[Saída reproduzível<br/>critérios, cenários e riscos]
 
     classDef inputClass fill:#dbeafe,stroke:#1d4ed8,color:#172554
@@ -56,8 +59,9 @@ flowchart LR
     class user_input inputClass
     class validate validationClass
     class context toolClass
-    class graph_state graphClass
+    class graph_state,llm graphClass
     class plan,output outputClass
+    class fallback validationClass
 ```
 
 ### Fluxo de execução
@@ -99,7 +103,8 @@ Fluxo principal:
 6. sugerir casos de borda e dados de exemplo;
 7. identificar riscos de ambiguidade;
 8. sugerir automação;
-9. formatar a resposta final em Markdown.
+9. gerar a resposta final com LLM quando houver configuração válida;
+10. usar fallback determinístico com aviso explícito quando não houver configuração de LLM.
 
 ## Planejamento
 
@@ -111,9 +116,34 @@ O fluxo usa uma base local em [data/test_templates.md](data/test_templates.md) c
 
 A ferramenta de leitura permite apenas arquivos `.md` e `.txt` dentro da pasta `data/`, com limite de tamanho e erros controlados para caminhos inválidos, arquivos inexistentes, extensões não permitidas e arquivos grandes demais.
 
+## Configuração de LLM
+
+O caminho principal de geração usa OpenAI via `langchain-openai`, integrado ao fluxo LangGraph. Para habilitar geração real com LLM, configure as variáveis no arquivo `.env` local ou no ambiente do terminal:
+
+```env
+OPENAI_API_KEY=
+OPENAI_MODEL=
+OPENAI_BASE_URL=
+```
+
+Variáveis esperadas:
+
+- `OPENAI_API_KEY`: chave do provedor. Obrigatória para usar LLM.
+- `OPENAI_MODEL`: modelo a ser usado. Opcional; quando ausente, o agente usa `gpt-4o-mini`.
+- `OPENAI_BASE_URL`: endpoint compatível com OpenAI. Opcional, útil para provedores compatíveis ou ambientes internos.
+
+Não versione chaves, tokens ou valores reais. Mantenha credenciais apenas em `.env` local ou no gerenciador seguro do ambiente de execução.
+
+### Fallback determinístico
+
+Quando nenhuma variável de LLM estiver configurada, o agente preserva a compatibilidade local e gera o plano pelo caminho determinístico. Nesse caso, a saída final começa com um aviso informando que o fallback foi usado.
+
+O fallback não é usado quando alguma configuração de LLM estiver presente, mas incompleta, inválida ou recusada pelo provedor. Casos como `OPENAI_MODEL` definido sem `OPENAI_API_KEY`, chave inválida, erro de autenticação, erro de autorização, modelo inexistente ou permissão insuficiente geram erro controlado e explícito, sem mascarar o problema.
+
 ## Decisões principais
 
-- O projeto usa geração determinística em vez de chamada real a LLM, evitando dependência de chaves, tokens ou provedores externos para a entrega acadêmica.
+- O projeto usa LLM como caminho principal quando há configuração válida por variáveis de ambiente.
+- A geração determinística permanece disponível apenas como fallback por ausência total de configuração de LLM.
 - O estado do LangGraph foi usado como memória de execução, mantendo o projeto simples e reproduzível.
 - A ferramenta integrada acessa apenas arquivos locais controlados na pasta `data/`, reduzindo riscos de leitura indevida.
 - Os exemplos de entrada e saída foram versionados para facilitar avaliação e reprodução.
@@ -121,8 +151,9 @@ A ferramenta de leitura permite apenas arquivos `.md` e `.txt` dentro da pasta `
 
 ## Limitações
 
-- A geração do plano é baseada em regras e templates locais; ela não substitui revisão de produto, QA ou pessoas especialistas do domínio.
-- O agente não consulta APIs externas nem bancos de dados.
+- A geração do plano não substitui revisão de produto, QA ou pessoas especialistas do domínio.
+- O agente só consulta API externa quando um provedor de LLM estiver configurado; sem LLM, usa apenas geração determinística local.
+- Sem configuração de LLM, o resultado usa fallback determinístico e tende a ser mais genérico.
 - Métricas específicas, regras de negócio detalhadas e critérios de performance precisam ser refinados com o time responsável pelo produto.
 - A saída é um ponto de partida para planejamento de testes, não uma garantia de cobertura completa.
 
@@ -157,6 +188,8 @@ Copy-Item .env.example .env
 
 Preencha o arquivo `.env` local apenas com valores reais da sua máquina. Esse arquivo não deve ser versionado.
 
+Para usar LLM, defina ao menos `OPENAI_API_KEY`. Para manter execução local sem LLM, deixe as variáveis de LLM vazias; o fallback determinístico será usado com aviso explícito.
+
 ### Execução
 
 O ponto de entrada gera um plano de testes em Markdown com uma história padrão:
@@ -190,6 +223,8 @@ Também é possível executar o módulo diretamente:
 ```bash
 uv run python -m test_plan_agent.cli
 ```
+
+Durante a execução, o CLI escreve mensagens de progresso em `stderr`. A resposta final em Markdown permanece em `stdout`, então redirecionamentos como `> output.md` continuam salvando apenas o plano gerado.
 
 ### Exemplos versionados
 

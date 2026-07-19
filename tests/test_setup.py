@@ -1,8 +1,11 @@
 from argparse import Namespace
 
+import pytest
+
 from test_plan_agent import __version__
 from test_plan_agent.cli import DEFAULT_USER_STORY, main, read_user_stories_file, read_user_story_file, resolve_user_stories, resolve_user_story
 from test_plan_agent.graph import run_agent
+from test_plan_agent.llm import LLMConfigurationError, LLMGenerationError
 from test_plan_agent.state import create_initial_state
 from test_plan_agent.tools import LocalFileReadError, read_local_data_file
 from test_plan_agent.validators import detect_ambiguous_terms, validate_user_story
@@ -20,6 +23,12 @@ MAIN_MARKDOWN_SECTIONS = [
     "## Sugestões de automação",
     "## Riscos e observações",
 ]
+
+
+@pytest.fixture(autouse=True)
+def clear_llm_environment(monkeypatch) -> None:
+    for variable in ("OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_BASE_URL"):
+        monkeypatch.setenv(variable, "")
 
 
 def test_package_version() -> None:
@@ -40,6 +49,10 @@ def test_create_initial_state() -> None:
     assert state["ambiguity_risks"] == []
     assert state["automation_suggestions"] == []
     assert state["final_answer"] == ""
+    assert state["generation_mode"] == ""
+    assert state["fallback_used"] is False
+    assert state["llm_provider"] == ""
+    assert state["llm_model"] == ""
     assert state["provisional_response"] == {}
 
 
@@ -203,12 +216,30 @@ def test_run_agent_returns_structured_test_plan() -> None:
     assert final_state["local_context"]["source"] == "data/test_templates.md"
     assert "Critérios de Aceite" in final_state["local_context"]["template_reference"]
     assert final_state["provisional_response"]["status"] == "ready"
+    assert final_state["generation_mode"] == "deterministic_fallback"
+    assert final_state["fallback_used"] is True
     assert final_state["acceptance_criteria"]
     assert final_state["test_scenarios"]
+    assert "fallback determinístico usado" in final_state["final_answer"]
     assert "# Plano de Testes" in final_state["final_answer"]
     assert "## Critérios de aceite verificáveis" in final_state["final_answer"]
     assert "## Cenários principais em Given/When/Then" in final_state["final_answer"]
     assert "Contexto local usado: data/test_templates.md" in final_state["final_answer"]
+
+
+def test_run_agent_reports_progress_with_callback() -> None:
+    progress_messages: list[str] = []
+
+    final_state = run_agent(
+        "Como cliente autenticado, quero consultar meus pedidos recentes para acompanhar a entrega.",
+        progress_callback=progress_messages.append,
+    )
+
+    assert final_state["generation_mode"] == "deterministic_fallback"
+    assert "_progress_callback" not in final_state
+    assert progress_messages[0] == "Validando entrada..."
+    assert "Preparando contexto local..." in progress_messages
+    assert "Nenhuma configuração de LLM encontrada; usando fallback determinístico..." in progress_messages
 
 
 def test_run_agent_completes_full_flow_for_valid_story() -> None:
@@ -244,6 +275,95 @@ def test_run_agent_keeps_using_local_template_context() -> None:
     assert final_state["local_context"]["template_size_bytes"] > 0
     assert "Checklist de Testabilidade" in final_state["local_context"]["template_reference"]
     assert final_state["provisional_response"]["local_template_source"] == "data/test_templates.md"
+
+
+def test_run_agent_uses_llm_when_configuration_exists(monkeypatch) -> None:
+    captured_messages = []
+    progress_messages: list[str] = []
+
+    class FakeChatModel:
+        def invoke(self, messages):
+            captured_messages.extend(messages)
+            return type("FakeResponse", (), {"content": "# Plano de Testes\n\n## Resumo da história\nGerado por LLM mockado."})()
+
+    monkeypatch.setenv("OPENAI_API_KEY", "chave-falsa-para-teste")
+    monkeypatch.setenv("OPENAI_MODEL", "modelo-falso")
+    monkeypatch.setattr("test_plan_agent.llm._build_chat_model", lambda config: FakeChatModel())
+
+    final_state = run_agent(
+        "Como cliente autenticado, quero consultar meus pedidos recentes para acompanhar a entrega.",
+        progress_callback=progress_messages.append,
+    )
+
+    assert final_state["generation_mode"] == "llm"
+    assert final_state["fallback_used"] is False
+    assert final_state["llm_provider"] == "openai"
+    assert final_state["llm_model"] == "modelo-falso"
+    assert final_state["provisional_response"]["message"] == "Plano de testes gerado com LLM."
+    assert final_state["final_answer"] == "# Plano de Testes\n\n## Resumo da história\nGerado por LLM mockado."
+    assert captured_messages[0][0] == "system"
+    assert captured_messages[1][0] == "human"
+    assert "data/test_templates.md" in captured_messages[1][1]
+    assert "Critérios de Aceite" in captured_messages[1][1]
+    assert "LLM configurado; enviando solicitação ao provedor..." in progress_messages
+    assert "Aguardando resposta do LLM..." in progress_messages
+    assert "Plano concluído com LLM." in progress_messages
+
+
+def test_main_prints_progress_to_stderr_without_polluting_markdown(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        "sys.argv",
+        ["test-plan-agent", "Como cliente autenticado, quero consultar meus pedidos recentes para acompanhar a entrega."],
+    )
+
+    main()
+
+    captured = capsys.readouterr()
+    assert captured.out.startswith("**Aviso:** fallback determinístico usado")
+    assert "[Test-Plan Agent]" not in captured.out
+    assert "[Test-Plan Agent] Processando história 1/1..." in captured.err
+    assert "[Test-Plan Agent] Preparando contexto local..." in captured.err
+
+
+def test_run_agent_fails_when_llm_variable_exists_without_api_key(monkeypatch) -> None:
+    monkeypatch.setenv("OPENAI_MODEL", "modelo-configurado-sem-chave")
+
+    with pytest.raises(LLMConfigurationError) as error:
+        run_agent("Como gestor, quero visualizar métricas para acompanhar resultados.")
+
+    assert "Configuração de LLM incompleta" in str(error.value)
+    assert "fallback determinístico" in str(error.value)
+
+
+def test_run_agent_does_not_fallback_on_provider_auth_error(monkeypatch) -> None:
+    class FakeAuthenticationError(Exception):
+        status_code = 401
+
+    class FakeChatModel:
+        def invoke(self, messages):
+            raise FakeAuthenticationError("invalid api key")
+
+    monkeypatch.setenv("OPENAI_API_KEY", "chave-falsa-para-teste")
+    monkeypatch.setattr("test_plan_agent.llm._build_chat_model", lambda config: FakeChatModel())
+
+    with pytest.raises(LLMGenerationError) as error:
+        run_agent("Como cliente, quero consultar faturas para conferir cobranças.")
+
+    assert "Falha de autenticação ou autorização" in str(error.value)
+    assert "fallback determinístico não foi usado" in str(error.value)
+
+
+def test_main_reports_llm_error_as_controlled_exit(monkeypatch) -> None:
+    monkeypatch.setenv("OPENAI_MODEL", "modelo-configurado-sem-chave")
+    monkeypatch.setattr(
+        "sys.argv",
+        ["test-plan-agent", "Como gestor, quero visualizar métricas para acompanhar resultados."],
+    )
+
+    with pytest.raises(SystemExit) as error:
+        main()
+
+    assert "Configuração de LLM incompleta" in str(error.value.code)
 
 
 def test_run_agent_reports_invalid_short_story() -> None:

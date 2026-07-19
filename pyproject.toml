@@ -5,6 +5,7 @@ description = "Agente para gerar planos de teste a partir de histórias de usuá
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "langchain-openai>=0.3.0",
     "langgraph>=0.6.0",
     "python-dotenv>=1.0.1",
 ]

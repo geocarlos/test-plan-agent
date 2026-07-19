@@ -2,6 +2,7 @@
 
 from langgraph.graph import END, START, StateGraph
 
+from test_plan_agent.llm import LLMError, generate_plan_with_llm, get_llm_config
 from test_plan_agent.prompts import (
     ACCEPTANCE_CRITERIA_PROMPT,
     FINAL_MARKDOWN_PROMPT,
@@ -13,18 +14,27 @@ from test_plan_agent.tools import prepare_minimal_context
 from test_plan_agent.validators import detect_ambiguous_terms, validate_user_story
 
 
+def _report_progress(state: AgentState, message: str) -> None:
+    progress_callback = state.get("_progress_callback")
+    if callable(progress_callback):
+        progress_callback(message)
+
+
 def validate_input(state: AgentState) -> AgentState:
     """Nó responsável por validar a entrada principal."""
+    _report_progress(state, "Validando entrada...")
     return {"validation_errors": validate_user_story(state.get("user_story", ""))}
 
 
 def prepare_context(state: AgentState) -> AgentState:
     """Nó responsável por preparar contexto mínimo controlado."""
+    _report_progress(state, "Preparando contexto local...")
     return {"local_context": prepare_minimal_context(state.get("user_story", ""))}
 
 
 def analyze_story(state: AgentState) -> AgentState:
     """Nó responsável por resumir a história e mapear lacunas iniciais."""
+    _report_progress(state, "Analisando história e lacunas...")
     user_story = " ".join(state.get("user_story", "").strip().split())
     ambiguous_terms = detect_ambiguous_terms(user_story)
 
@@ -40,6 +50,7 @@ def analyze_story(state: AgentState) -> AgentState:
 
 def generate_acceptance_criteria(state: AgentState) -> AgentState:
     """Nó responsável por gerar critérios de aceite verificáveis."""
+    _report_progress(state, "Gerando critérios de aceite...")
     story = state.get("story_analysis", {}).get("summary", state.get("user_story", ""))
 
     return {
@@ -57,6 +68,7 @@ def generate_acceptance_criteria(state: AgentState) -> AgentState:
 
 def generate_test_scenarios(state: AgentState) -> AgentState:
     """Nó responsável por gerar cenários principais e negativos."""
+    _report_progress(state, "Gerando cenários de teste...")
     return {
         "test_scenarios": [
             {
@@ -90,6 +102,7 @@ def generate_test_scenarios(state: AgentState) -> AgentState:
 
 def generate_edge_cases(state: AgentState) -> AgentState:
     """Nó responsável por sugerir casos de borda."""
+    _report_progress(state, "Mapeando casos de borda...")
     return {
         "edge_cases": [
             "Executar o fluxo com exatamente um registro disponível.",
@@ -102,6 +115,7 @@ def generate_edge_cases(state: AgentState) -> AgentState:
 
 def suggest_example_data(state: AgentState) -> AgentState:
     """Nó responsável por sugerir dados de exemplo."""
+    _report_progress(state, "Sugerindo dados de exemplo...")
     return {
         "example_data": [
             "Usuário válido: cliente_teste@example.com com perfil autorizado.",
@@ -114,6 +128,7 @@ def suggest_example_data(state: AgentState) -> AgentState:
 
 def identify_ambiguity_risks(state: AgentState) -> AgentState:
     """Nó responsável por identificar riscos de ambiguidade."""
+    _report_progress(state, "Identificando riscos e ambiguidades...")
     analysis = state.get("story_analysis", {})
     risks = [f"Lacuna: {gap}" for gap in analysis.get("gaps", [])]
     risks.extend(
@@ -129,6 +144,7 @@ def identify_ambiguity_risks(state: AgentState) -> AgentState:
 
 def suggest_automation(state: AgentState) -> AgentState:
     """Nó responsável por sugerir automação de testes."""
+    _report_progress(state, "Sugerindo automação de testes...")
     return {
         "automation_suggestions": [
             "Automatizar o fluxo principal como teste de aceitação ou teste end-to-end.",
@@ -163,14 +179,13 @@ def _format_scenarios(scenarios: list[dict[str, str]], scenario_type: str) -> st
     return "\n\n".join(blocks)
 
 
-def format_final_answer(state: AgentState) -> AgentState:
-    """Nó responsável por formatar a resposta final em Markdown."""
+def _build_deterministic_final_answer(state: AgentState) -> str:
     story_analysis = state.get("story_analysis", {})
     scenarios = state.get("test_scenarios", [])
     local_context = state.get("local_context", {})
     gaps_and_risks = state.get("ambiguity_risks", [])
 
-    final_answer = "\n\n".join(
+    return "\n\n".join(
         [
             "# Plano de Testes",
             "## Resumo da história\n" + story_analysis.get("summary", "História não informada."),
@@ -195,12 +210,51 @@ def format_final_answer(state: AgentState) -> AgentState:
         ]
     )
 
+
+def format_final_answer(state: AgentState) -> AgentState:
+    """Nó responsável por formatar a resposta final em Markdown."""
+    _report_progress(state, "Montando resposta final...")
+    deterministic_answer = _build_deterministic_final_answer(state)
+    provisional_response = {
+        **state.get("provisional_response", {}),
+        "status": "invalid" if state.get("validation_errors") else "ready",
+        "message": "Plano de testes estruturado gerado com sucesso.",
+    }
+
+    config = get_llm_config()
+    if config is None:
+        _report_progress(state, "Nenhuma configuração de LLM encontrada; usando fallback determinístico...")
+        fallback_notice = (
+            "**Aviso:** fallback determinístico usado porque nenhuma configuração de LLM foi encontrada no ambiente. "
+            "Defina OPENAI_API_KEY para usar geração com LLM."
+        )
+        return {
+            "final_answer": fallback_notice + "\n\n" + deterministic_answer,
+            "generation_mode": "deterministic_fallback",
+            "fallback_used": True,
+            "provisional_response": {
+                **provisional_response,
+                "generation_mode": "deterministic_fallback",
+                "fallback_used": True,
+                "message": "Fallback determinístico usado por ausência de configuração de LLM.",
+            },
+        }
+
+    try:
+        _report_progress(state, "LLM configurado; enviando solicitação ao provedor...")
+        _report_progress(state, "Aguardando resposta do LLM...")
+        final_answer, llm_metadata = generate_plan_with_llm(state, deterministic_answer)
+    except LLMError:
+        raise
+    _report_progress(state, "Plano concluído com LLM.")
+
     return {
         "final_answer": final_answer,
+        **llm_metadata,
         "provisional_response": {
-            **state.get("provisional_response", {}),
-            "status": "invalid" if state.get("validation_errors") else "ready",
-            "message": "Plano de testes estruturado gerado com sucesso.",
+            **provisional_response,
+            **llm_metadata,
+            "message": "Plano de testes gerado com LLM.",
         },
     }
 
@@ -235,7 +289,13 @@ def build_graph():
     return graph_builder.compile()
 
 
-def run_agent(user_story: str) -> AgentState:
+def run_agent(user_story: str, progress_callback=None) -> AgentState:
     """Executa o grafo a partir de uma história de usuário."""
     graph = build_graph()
-    return graph.invoke({"user_story": user_story})
+    initial_state: AgentState = {"user_story": user_story}
+    if progress_callback is not None:
+        initial_state["_progress_callback"] = progress_callback
+
+    final_state = graph.invoke(initial_state)
+    final_state.pop("_progress_callback", None)
+    return final_state

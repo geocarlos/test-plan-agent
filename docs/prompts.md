@@ -666,4 +666,4 @@ Ao final, informe os arquivos alterados, comandos executados, resultado dos test
 
 ### Status
 
-- Pendente.
+- Concluído e validado com `uv sync`, `uv run pytest` e testes com mocks cobrindo LLM configurado, fallback por ausência de configuração e erro controlado sem fallback.
