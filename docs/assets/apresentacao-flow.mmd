@@ -5,7 +5,7 @@ flowchart TD
     validation_result -->|sim| context["Preparar contexto local"]
     context --> analyze["Analisar história<br/>e ambiguidades"]
     analyze --> draft["Gerar rascunho<br/>critérios e cenários"]
-    draft --> decision{"Configuração<br/>de LLM"}
+    draft --> decision{"Configuração<br/>de LLM?"}
     decision -->|ausente| fallback["Fallback determinístico"]
     decision -->|válida| llm["Gerar plano com LLM"]
     decision -->|inválida| error["Falhar sem<br/>mascarar erro"]
@@ -14,16 +14,18 @@ flowchart TD
     correction --> markdown
     error --> stderr["Mensagem em stderr"]
 
-    classDef startClass fill:#dbeafe,stroke:#2457d6,color:#172033
-    classDef validationClass fill:#fef3c7,stroke:#f59e0b,color:#172033
-    classDef contextClass fill:#dcfce7,stroke:#00a884,color:#172033
-    classDef graphClass fill:#ede9fe,stroke:#7c3aed,color:#172033
-    classDef outputClass fill:#f8fafc,stroke:#64748b,color:#172033
-    classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#172033
+    classDef startClass fill:#dbeafe,stroke:#1d4ed8,color:#172554
+    classDef validationClass fill:#fef3c7,stroke:#d97706,color:#451a03
+    classDef contextClass fill:#dcfce7,stroke:#16a34a,color:#052e16
+    classDef graphClass fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef fallbackClass fill:#fef9c3,stroke:#ca8a04,color:#422006
+    classDef stdoutClass fill:#ccfbf1,stroke:#0f766e,color:#042f2e
+    classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#450a0a
 
     class start startClass
     class validate,validation_result validationClass
     class context contextClass
-    class analyze,draft,decision,llm,fallback graphClass
-    class correction,markdown,stderr outputClass
-    class error errorClass
+    class analyze,draft,decision,llm graphClass
+    class fallback fallbackClass
+    class correction,markdown stdoutClass
+    class error,stderr errorClass
