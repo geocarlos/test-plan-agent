@@ -41,7 +41,7 @@ O agente usa um `StateGraph` do LangGraph para organizar o fluxo em etapas seque
 
 ```mermaid
 flowchart LR
-    user_input[Entrada do usuário<br/>CLI ou arquivo Markdown] --> cli[CLI<br/>resolve uma ou várias histórias]
+    user_input[Entrada do usuário<br/>CLI, Markdown ou texto simples] --> cli[CLI<br/>resolve uma ou várias histórias]
     cli --> progress[Progresso em stderr<br/>sem poluir o Markdown]
     cli --> graph_state[LangGraph StateGraph<br/>estado como memória]
     graph_state --> validate[Validação<br/>conteúdo, ator, ação e valor]
@@ -133,6 +133,8 @@ Fluxo principal:
 12. usar fallback determinístico com aviso explícito quando não houver configuração de LLM;
 13. falhar com erro controlado, sem fallback silencioso, quando a configuração de LLM existir mas estiver inválida ou for recusada.
 
+A validação básica exige uma entrada não vazia, com pelo menos 20 caracteres, ator ou perfil envolvido, objetivo ou ação esperada e resultado esperado ou valor gerado. Termos subjetivos como `rápido`, `simples`, `intuitivo`, `adequado`, `melhor` e `completo` são tratados como ambiguidades não bloqueantes e aparecem como riscos no plano.
+
 ## Planejamento
 
 O guia inicial do agente está em [docs/guia-geral-prompt.md](docs/guia-geral-prompt.md). Ele descreve o prompt-base, fluxo com LangGraph, estado recomendado, ferramenta integrada, validações e exemplos de entrada e saída.
@@ -141,7 +143,7 @@ O guia inicial do agente está em [docs/guia-geral-prompt.md](docs/guia-geral-pr
 
 O fluxo usa uma base local em [data/test_templates.md](data/test_templates.md) como referência controlada para critérios de aceite, cenários Given/When/Then, casos negativos, casos de borda e checklist de testabilidade.
 
-A ferramenta de leitura permite apenas arquivos `.md` e `.txt` dentro da pasta `data/`, com limite de tamanho e erros controlados para caminhos inválidos, arquivos inexistentes, extensões não permitidas e arquivos grandes demais.
+A ferramenta de leitura permite apenas arquivos `.md` e `.txt` dentro da pasta `data/`, com limite de 50 KB e erros controlados para caminhos inválidos, arquivos inexistentes, extensões não permitidas e arquivos grandes demais.
 
 ## Configuração de LLM
 
@@ -233,13 +235,15 @@ Também é possível informar uma história pela linha de comando:
 uv run test-plan-agent "Como cliente autenticado, quero consultar meus pedidos recentes para acompanhar a entrega."
 ```
 
-Também é possível informar um arquivo Markdown com a história:
+Também é possível informar um arquivo `.md`, `.markdown` ou `.txt` com a história:
 
 ```bash
 uv run test-plan-agent --file examples/input/historia-valida.md
 ```
 
-Arquivos Markdown também podem conter várias histórias, desde que cada bloco esteja separado por `---`. Nesse caso, o agente gera um plano de testes para cada história encontrada.
+Arquivos informados por `--file` também podem conter várias histórias, desde que cada bloco esteja separado por `---`, `***` ou `___`. Nesse caso, o agente gera um plano de testes para cada história encontrada. Ao ler Markdown, o CLI ignora cabeçalhos, remove marcações simples de lista e negrito e junta as linhas úteis antes da análise.
+
+Use uma história pela linha de comando ou um arquivo com `--file`, não ambos no mesmo comando.
 
 No Windows PowerShell:
 
@@ -270,7 +274,7 @@ Entradas de exemplo estão em [examples/input](examples/input) e saídas geradas
 Histórias disponíveis:
 
 - [examples/input/historia-valida.txt](examples/input/historia-valida.txt): história completa para geração do plano principal.
-- [examples/input/historia-valida.md](examples/input/historia-valida.md): história completa em Markdown para execução com `--file`.
+- [examples/input/historia-valida.md](examples/input/historia-valida.md): história completa em Markdown para execução com `--file`; arquivos `.txt` também são aceitos por essa opção.
 - [examples/input/historia-ambigua.txt](examples/input/historia-ambigua.txt): história com termos subjetivos detectados como ambíguos.
 - [examples/input/historia-incompleta.txt](examples/input/historia-incompleta.txt): requisito incompleto com lacunas de ator e resultado esperado.
 
@@ -279,6 +283,8 @@ Saídas correspondentes:
 - [examples/output/plano-historia-valida.md](examples/output/plano-historia-valida.md)
 - [examples/output/plano-historia-ambigua.md](examples/output/plano-historia-ambigua.md)
 - [examples/output/plano-historia-incompleta.md](examples/output/plano-historia-incompleta.md)
+
+As saídas versionadas servem como referência reproduzível do caminho determinístico. Quando houver LLM configurado, o plano pode variar conforme a resposta do provedor.
 
 Para reproduzir uma execução com uma entrada versionada no PowerShell:
 
