@@ -71,8 +71,8 @@ def read_user_stories_file(file_path: str) -> list[str]:
     """Lê uma ou mais histórias de usuário a partir de um arquivo Markdown."""
     story_path = Path(file_path)
 
-    if story_path.suffix.lower() not in {".md", ".markdown"}:
-        raise ValueError("Informe um arquivo Markdown com extensão .md ou .markdown.")
+    if story_path.suffix.lower() not in {".md", ".markdown", ".txt"}:
+        raise ValueError("Informe um arquivo Markdown com extensão .md ou .markdown., ou texto simples (.txt)")
 
     if not story_path.is_file():
         raise FileNotFoundError("Arquivo de história não encontrado.")
