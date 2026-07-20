@@ -17,6 +17,10 @@ jobs:
   validate:
     name: Validar projeto
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ""
+      OPENAI_MODEL: ""
+      OPENAI_BASE_URL: ""
 
     steps:
       - name: Checkout do repositório
@@ -40,9 +44,9 @@ jobs:
         run: uv run pytest
 
       - name: Validar CLI com história padrão
-        run: uv run test-plan-agent
+        run: timeout 120s uv run test-plan-agent
 
       - name: Validar CLI com história curta
         run: |
-          uv run test-plan-agent "Como cliente, quero consultar pedidos recentes para acompanhar a entrega." > plano-ci.md
+          timeout 120s uv run test-plan-agent "Como cliente, quero consultar pedidos recentes para acompanhar a entrega." > plano-ci.md
           test -s plano-ci.md
