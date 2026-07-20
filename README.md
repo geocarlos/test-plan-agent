@@ -62,16 +62,20 @@ flowchart LR
     classDef validationClass fill:#fef3c7,stroke:#d97706,color:#451a03
     classDef toolClass fill:#dcfce7,stroke:#16a34a,color:#052e16
     classDef graphClass fill:#ede9fe,stroke:#7c3aed,color:#2e1065
-    classDef outputClass fill:#ffe4e6,stroke:#e11d48,color:#4c0519
+    classDef fallbackClass fill:#fef9c3,stroke:#ca8a04,color:#422006
+    classDef stdoutClass fill:#ccfbf1,stroke:#0f766e,color:#042f2e
+    classDef stderrClass fill:#e0f2fe,stroke:#0284c7,color:#082f49
     classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#450a0a
 
     class user_input,cli inputClass
     class validate,validation_gate validationClass
     class context toolClass
     class graph_state,deterministic,llm graphClass
-    class correction,plan,output,progress,stderr_error outputClass
-    class fallback validationClass
-    class controlled_error errorClass
+    class correction,output stdoutClass
+    class plan graphClass
+    class progress stderrClass
+    class fallback fallbackClass
+    class controlled_error,stderr_error errorClass
 ```
 
 ### Fluxo de execução
@@ -106,15 +110,18 @@ flowchart TD
     classDef validationClass fill:#fef3c7,stroke:#d97706,color:#451a03
     classDef contextClass fill:#dcfce7,stroke:#16a34a,color:#052e16
     classDef generationClass fill:#ede9fe,stroke:#7c3aed,color:#2e1065
-    classDef finalClass fill:#ffe4e6,stroke:#e11d48,color:#4c0519
+    classDef fallbackClass fill:#fef9c3,stroke:#ca8a04,color:#422006
+    classDef stdoutClass fill:#ccfbf1,stroke:#0f766e,color:#042f2e
     classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#450a0a
 
     class start_node,finish_node boundaryClass
     class validate_input,validation_result validationClass
     class prepare_context contextClass
     class analyze_story,acceptance,scenarios,edge_cases,example_data,risks,automation,llm_config,llm_request generationClass
-    class invalid_answer,invalid_stdout,final_answer,deterministic_fallback,stdout_markdown,stderr_message finalClass
-    class llm_error errorClass
+    class invalid_answer,final_answer stdoutClass
+    class invalid_stdout,stdout_markdown stdoutClass
+    class deterministic_fallback fallbackClass
+    class llm_error,stderr_message errorClass
 ```
 
 Fluxo principal:

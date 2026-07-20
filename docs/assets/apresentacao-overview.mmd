@@ -1,27 +1,30 @@
 flowchart LR
-    input["História de usuário<br/>CLI ou Markdown"] --> cli["CLI<br/>1 ou várias histórias"]
+    input["História de usuário<br/>CLI, Markdown ou texto simples"] --> cli["CLI<br/>1 ou várias histórias"]
     cli --> state_graph["LangGraph<br/>StateGraph"]
     state_graph --> validation{"Entrada válida?"}
     validation -->|não| correction["Resposta de correção<br/>sem LLM"]
     validation -->|sim| context["Ferramenta local<br/>data/test_templates.md"]
     context --> generation{"LLM configurado?"}
-    generation -->|sim| llm["Plano com LLM"]
+    generation -->|sim| llm["Geração com LLM"]
     generation -->|não| fallback["Fallback determinístico<br/>com aviso"]
     generation -->|inválido| error["Erro controlado"]
-    llm --> output["Markdown final"]
+    llm --> output["Markdown final<br/>em stdout"]
     fallback --> output
     correction --> output
 
-    classDef inputClass fill:#dbeafe,stroke:#2457d6,color:#172033
-    classDef validationClass fill:#fef3c7,stroke:#f59e0b,color:#172033
-    classDef graphClass fill:#ede9fe,stroke:#7c3aed,color:#172033
-    classDef toolClass fill:#dcfce7,stroke:#00a884,color:#172033
-    classDef outputClass fill:#fef3c7,stroke:#f59e0b,color:#172033
-    classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#172033
+    classDef inputClass fill:#dbeafe,stroke:#1d4ed8,color:#172554
+    classDef validationClass fill:#fef3c7,stroke:#d97706,color:#451a03
+    classDef graphClass fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef toolClass fill:#dcfce7,stroke:#16a34a,color:#052e16
+    classDef fallbackClass fill:#fef9c3,stroke:#ca8a04,color:#422006
+    classDef stdoutClass fill:#ccfbf1,stroke:#0f766e,color:#042f2e
+    classDef errorClass fill:#fee2e2,stroke:#dc2626,color:#450a0a
 
     class input,cli inputClass
     class state_graph,generation graphClass
     class validation validationClass
     class context toolClass
-    class correction,llm,fallback,output outputClass
+    class correction,output stdoutClass
+    class llm graphClass
+    class fallback fallbackClass
     class error errorClass
